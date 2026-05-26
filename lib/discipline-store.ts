@@ -1,154 +1,142 @@
-// Local-first store for the discipline dashboard. Everything lives in
-// localStorage so the app works offline with zero backend.
+// Pure logic + types for the discipline dashboard. No React here.
+// Everything the UI persists lives in localStorage (see useLS), so the
+// app works offline with zero backend.
 
-export interface DisciplineSettings {
-  goalEur: number; // monthly target (chiffre d'affaires or net, see goalBasis)
-  goalBasis: "brut" | "net"; // does the goal track CA brut or net en poche ?
-  usdToEur: number; // conversion rate, editable (offline-friendly)
-  skoolPriceUsd: number; // monthly price per member, in USD
-  skoolMembers: number; // current paying members
-  skoolCostUsd: number; // monthly running cost of Skool, in USD (≈ 100)
-  shortVideoEur: number; // avg paid per short brand video
-  longVideoEur: number; // avg paid per long brand video
-  cotisationsRate: number; // URSSAF social contributions (BNC), as a fraction
-  impotRate: number; // versement libératoire income tax (BNC), as a fraction
+export const GOAL = 10000;
+
+export type IconName =
+  | "spark"
+  | "bolt"
+  | "play"
+  | "wave"
+  | "users"
+  | "target"
+  | "calendar";
+
+export interface Habit {
+  id: string;
+  label: string;
+  icon: IconName;
+  time: string; // "HH:MM"
+  duration: number; // minutes
+  xp: number; // reward when checked (gamification)
 }
 
-export interface MonthRevenue {
-  shortVideos: number;
-  longVideos: number;
-  otherEur: number; // TikTok / Insta sponsorships, misc
+export interface Prices {
+  skoolUsd: number; // $/member/month
+  skoolCostUsd: number; // Skool platform cost $/month
+  fx: number; // 1 USD = X EUR
+  shortVid: number; // € per short brand video
+  longVid: number; // € per long brand video
 }
 
-export interface DisciplineState {
-  habits: string[];
-  // month key "YYYY-MM" -> habit index -> list of completed day numbers (1..31)
-  completions: Record<string, Record<number, number[]>>;
-  revenue: Record<string, MonthRevenue>;
-  settings: DisciplineSettings;
+export interface Fiscal {
+  urssaf: number; // social contributions, percent
+  impot: number; // versement libératoire, percent
 }
 
-export const DEFAULT_HABITS = [
-  "Réveil 6:30",
-  "Boire de l'eau",
-  "Lire 10 pages",
-  "Pas de cigarette",
-  "2 fruits",
-  "Moins de téléphone",
-  "Training",
-  "Dormir avant 23:00",
+export interface MonthCounters {
+  shortVids: number;
+  longVids: number;
+  posts: number;
+}
+
+export type GoalMode = "net" | "brut";
+
+export const DEFAULT_HABITS: Habit[] = [
+  { id: "wake", label: "Réveil + 10 min sans téléphone", icon: "spark", time: "07:30", duration: 30, xp: 10 },
+  { id: "learn", label: "30 min de veille IA", icon: "spark", time: "08:00", duration: 30, xp: 15 },
+  { id: "deep", label: "Deep work — script + tournage", icon: "bolt", time: "09:00", duration: 120, xp: 40 },
+  { id: "post", label: "Poster 1 vidéo TikTok/Insta", icon: "play", time: "12:00", duration: 30, xp: 20 },
+  { id: "lunch", label: "Pause déjeuner", icon: "wave", time: "12:30", duration: 60, xp: 5 },
+  { id: "skool", label: "Engagement Skool (DM, post)", icon: "users", time: "14:00", duration: 60, xp: 50 },
+  { id: "outreach", label: "Prospecter 5 marques", icon: "target", time: "15:00", duration: 60, xp: 30 },
+  { id: "edit", label: "Montage / livraison vidéo", icon: "bolt", time: "16:30", duration: 90, xp: 25 },
+  { id: "review", label: "Bilan du jour + plan demain", icon: "calendar", time: "18:30", duration: 15, xp: 15 },
 ];
 
-export const DEFAULT_SETTINGS: DisciplineSettings = {
-  goalEur: 10000,
-  goalBasis: "brut",
-  usdToEur: 0.92,
-  skoolPriceUsd: 50,
-  skoolMembers: 0,
+export const DEFAULT_PRICES: Prices = {
+  skoolUsd: 30,
   skoolCostUsd: 100,
-  shortVideoEur: 80,
-  longVideoEur: 150,
-  cotisationsRate: 0.246, // BNC micro-entrepreneur 2026 — éditable
-  impotRate: 0.022, // versement libératoire BNC (prestations)
+  fx: 0.92,
+  shortVid: 80,
+  longVid: 150,
 };
 
-const STORAGE_KEY = "brick-discipline-v1";
+export const DEFAULT_FISCAL: Fiscal = { urssaf: 24, impot: 2.2 };
+export const DEFAULT_MEMBERS = 24;
 
-export function monthKey(d: Date): string {
+export function emptyCounters(): MonthCounters {
+  return { shortVids: 0, longVids: 0, posts: 0 };
+}
+
+// ── date helpers ──────────────────────────────────────────────────────────
+
+export function todayKey(d = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+export function monthKey(d = new Date()): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
-export function daysInMonth(year: number, monthIndex0: number): number {
-  return new Date(year, monthIndex0 + 1, 0).getDate();
+export function monthLabel(d = new Date()): string {
+  return d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
 }
 
-export function emptyState(): DisciplineState {
+export function dayLabel(d = new Date()): string {
+  return d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+}
+
+// ── formatting ──────────────────────────────────────────────────────────
+
+export const fmtEur = (n: number) => Math.round(n).toLocaleString("fr-FR") + " €";
+export const fmtUsd = (n: number) => "$" + Math.round(n).toLocaleString("fr-FR");
+
+// ── finance ──────────────────────────────────────────────────────────────
+
+export interface FinanceInput {
+  prices: Prices;
+  members: number;
+  fiscal: Fiscal;
+  counters: MonthCounters;
+}
+
+export interface Finance {
+  skoolGrossUsd: number;
+  skoolGrossEur: number;
+  skoolPlatformEur: number;
+  brandGrossEur: number;
+  caBrut: number;
+  urssafEur: number;
+  impotEur: number;
+  chargesEur: number;
+  netEur: number;
+}
+
+export function computeFinance({ prices, members, fiscal, counters }: FinanceInput): Finance {
+  const skoolGrossUsd = members * prices.skoolUsd;
+  const skoolGrossEur = skoolGrossUsd * prices.fx;
+  const skoolPlatformEur = prices.skoolCostUsd * prices.fx;
+  const brandGrossEur = counters.shortVids * prices.shortVid + counters.longVids * prices.longVid;
+  const caBrut = skoolGrossEur + brandGrossEur;
+  const urssafEur = caBrut * (fiscal.urssaf / 100);
+  const impotEur = caBrut * (fiscal.impot / 100);
+  const chargesEur = urssafEur + impotEur;
+  const netEur = caBrut - chargesEur - skoolPlatformEur;
   return {
-    habits: [...DEFAULT_HABITS],
-    completions: {},
-    revenue: {},
-    settings: { ...DEFAULT_SETTINGS },
-  };
-}
-
-export function loadState(): DisciplineState {
-  if (typeof window === "undefined") return emptyState();
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return emptyState();
-    const parsed = JSON.parse(raw) as Partial<DisciplineState>;
-    return {
-      habits: parsed.habits?.length ? parsed.habits : [...DEFAULT_HABITS],
-      completions: parsed.completions ?? {},
-      revenue: parsed.revenue ?? {},
-      settings: { ...DEFAULT_SETTINGS, ...(parsed.settings ?? {}) },
-    };
-  } catch {
-    return emptyState();
-  }
-}
-
-export function saveState(state: DisciplineState): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch {
-    // storage full or unavailable — ignore, the UI keeps working in-memory
-  }
-}
-
-// ── Finance ─────────────────────────────────────────────────────────────
-
-export interface FinanceBreakdown {
-  skoolGrossEur: number; // CA Skool converti en €
-  skoolCostEur: number; // coût mensuel Skool en €
-  videosEur: number; // revenus vidéos de marque
-  otherEur: number;
-  caBrut: number; // chiffre d'affaires total (base de calcul URSSAF)
-  cotisations: number; // charges sociales URSSAF
-  impot: number; // impôt versement libératoire
-  charges: number; // cotisations + impôt
-  netApresPrelevements: number; // CA − charges
-  netEnPoche: number; // net − coût Skool
-}
-
-export function computeFinance(
-  rev: MonthRevenue,
-  s: DisciplineSettings,
-): FinanceBreakdown {
-  const skoolGrossEur = s.skoolMembers * s.skoolPriceUsd * s.usdToEur;
-  const skoolCostEur = s.skoolCostUsd * s.usdToEur;
-  const videosEur = rev.shortVideos * s.shortVideoEur + rev.longVideos * s.longVideoEur;
-  const otherEur = rev.otherEur;
-
-  const caBrut = skoolGrossEur + videosEur + otherEur;
-  const cotisations = caBrut * s.cotisationsRate;
-  const impot = caBrut * s.impotRate;
-  const charges = cotisations + impot;
-  const netApresPrelevements = caBrut - charges;
-  const netEnPoche = netApresPrelevements - skoolCostEur;
-
-  return {
+    skoolGrossUsd,
     skoolGrossEur,
-    skoolCostEur,
-    videosEur,
-    otherEur,
+    skoolPlatformEur,
+    brandGrossEur,
     caBrut,
-    cotisations,
-    impot,
-    charges,
-    netApresPrelevements,
-    netEnPoche,
+    urssafEur,
+    impotEur,
+    chargesEur,
+    netEur,
   };
 }
 
-export function emptyRevenue(): MonthRevenue {
-  return { shortVideos: 0, longVideos: 0, otherEur: 0 };
+export function daysInMonth(d = new Date()): number {
+  return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
 }
-
-export const eur = (n: number) =>
-  new Intl.NumberFormat("fr-FR", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  }).format(Math.round(n));

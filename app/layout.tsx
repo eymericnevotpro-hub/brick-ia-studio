@@ -1,17 +1,10 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
 export const metadata: Metadata = {
-  title: "Discipline — Objectifs & habitudes",
+  title: "Discipline — Vers 10 000 € / mois",
   description:
-    "Tableau de bord ludique pour autoentrepreneur : roue d'habitudes, objectif de revenus 10 000 € et calcul URSSAF en temps réel.",
+    "Tableau de bord ludique pour autoentrepreneur : objectif de revenus, emploi du temps, rituels avec XP, charges URSSAF et coach IA quotidien.",
 };
 
 export default function RootLayout({
@@ -20,8 +13,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className={inter.variable}>
-      <body style={{ background: "#080401" }}>{children}</body>
+    <html lang="fr">
+      <body>
+        <div className="bg-blob a" />
+        <div className="bg-blob b" />
+        {children}
+      </body>
     </html>
   );
 }
