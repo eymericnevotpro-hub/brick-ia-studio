@@ -97,7 +97,6 @@ export default function AnimatedBackground() {
 
   return (
     <div className="fixed inset-0 pointer-events-none z-0">
-      {/* Grid */}
       <div
         className="absolute inset-0"
         style={{
@@ -106,7 +105,6 @@ export default function AnimatedBackground() {
           backgroundSize: "60px 60px",
         }}
       />
-      {/* Radial glow center */}
       <div
         className="absolute inset-0"
         style={{
@@ -114,7 +112,6 @@ export default function AnimatedBackground() {
             "radial-gradient(ellipse 60% 50% at 50% 30%, rgba(255,122,0,0.08) 0%, transparent 70%)",
         }}
       />
-      {/* Bottom vignette */}
       <div
         className="absolute inset-0"
         style={{
@@ -122,7 +119,6 @@ export default function AnimatedBackground() {
             "radial-gradient(ellipse 80% 60% at 50% 100%, rgba(255,80,0,0.06) 0%, transparent 60%)",
         }}
       />
-      {/* Particles canvas */}
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
     </div>
   );

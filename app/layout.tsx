@@ -9,15 +9,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Brick IA Studio — Outils IA pour créateurs",
+  title: "Discipline — Objectifs & habitudes",
   description:
-    "Les meilleurs outils IA pour créer des vidéos et images virales. Seedance 2.0, Kling 3.0, Veo3, Grok, Nano Banana Pro et plus — ultra simple, même pour débutants.",
-  keywords: ["IA", "intelligence artificielle", "vidéo IA", "influenceur IA", "créateur de contenu"],
-  openGraph: {
-    title: "Brick IA Studio",
-    description: "Outils IA pour créateurs de contenu — vidéos et images virales",
-    type: "website",
-  },
+    "Tableau de bord ludique pour autoentrepreneur : roue d'habitudes, objectif de revenus 10 000 € et calcul URSSAF en temps réel.",
 };
 
 export default function RootLayout({
