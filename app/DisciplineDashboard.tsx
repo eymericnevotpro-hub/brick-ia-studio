@@ -28,6 +28,7 @@ import {
   Habit,
   MonthCounters,
   Prices,
+  ServiceEntry,
   computeFinance,
   dayLabel,
   emptyCounters,
@@ -287,6 +288,148 @@ function StreamCard({
       </div>
 
       {footer}
+    </div>
+  );
+}
+
+/* ====================================================================== */
+/*  SERVICES CARD — custom one-off prestation payments                    */
+/* ====================================================================== */
+function ServicesCard({
+  services,
+  total,
+  onAdd,
+  onRemove,
+}: {
+  services: ServiceEntry[];
+  total: number;
+  onAdd: (label: string, amount: number) => void;
+  onRemove: (id: string) => void;
+}) {
+  const [label, setLabel] = useState("");
+  const [amount, setAmount] = useState("");
+
+  const submit = () => {
+    const a = Math.max(0, Number(amount) || 0);
+    if (a <= 0) return;
+    onAdd(label, a);
+    setLabel("");
+    setAmount("");
+  };
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        background: "var(--card)",
+        borderRadius: 24,
+        padding: 22,
+        boxShadow: "var(--shadow-sm)",
+        border: "1px solid var(--line)",
+        display: "flex",
+        flexDirection: "column",
+        gap: 16,
+        animation: "fade-up 600ms var(--ease-out) backwards",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ width: 8, height: 8, borderRadius: 4, background: "#FF9A3C" }} />
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, letterSpacing: "-0.01em" }}>Prestations de services</h3>
+          </div>
+          <div style={{ fontSize: 12.5, color: "var(--ink-2)", marginTop: 4, marginLeft: 16 }}>
+            Tes paies ponctuelles · montants libres
+          </div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div className="mono" style={{ fontSize: 22, fontWeight: 600, color: "#FF9A3C", letterSpacing: "-0.02em", lineHeight: 1 }}>
+            <AnimatedNumber value={total} format={(n) => fmtEur(n)} />
+          </div>
+          <div style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 4, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+            {services.length} presta{services.length > 1 ? "s" : ""} · ce mois
+          </div>
+        </div>
+      </div>
+
+      {services.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {services.map((s) => (
+            <div
+              key={s.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 10,
+                padding: "10px 12px",
+                background: "var(--bg-2)",
+                borderRadius: 14,
+              }}
+            >
+              <div style={{ fontSize: 13.5, fontWeight: 500, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.label}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                <span className="mono" style={{ fontSize: 15, fontWeight: 600 }}>{fmtEur(s.amount)}</span>
+                <button
+                  onClick={() => onRemove(s.id)}
+                  title="Supprimer"
+                  style={{
+                    width: 26,
+                    height: 26,
+                    borderRadius: "50%",
+                    background: "white",
+                    border: "1px solid var(--line)",
+                    display: "grid",
+                    placeItems: "center",
+                    color: "var(--ink-3)",
+                    transition: "transform 200ms var(--bounce), color 160ms",
+                  }}
+                  onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.85)")}
+                  onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                >
+                  <Icon name="x" size={13} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <input
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && submit()}
+          placeholder="Ex : logo IA pour client X"
+          style={{
+            flex: "1 1 160px",
+            minWidth: 0,
+            background: "var(--bg-2)",
+            border: "1px solid transparent",
+            borderRadius: 12,
+            padding: "10px 14px",
+            fontSize: 13.5,
+            color: "var(--ink)",
+            outline: "none",
+          }}
+        />
+        <div style={{ display: "flex", alignItems: "center", background: "var(--bg-2)", borderRadius: 12, padding: "10px 14px", width: 120 }}>
+          <input
+            type="number"
+            min={0}
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && submit()}
+            placeholder="0"
+            style={{ flex: 1, width: "100%", background: "transparent", border: "none", outline: "none", fontSize: 15, fontFamily: "Geist Mono, monospace", fontWeight: 600, color: "var(--ink)" }}
+          />
+          <span style={{ fontSize: 13, color: "var(--ink-2)" }}>€</span>
+        </div>
+        <Btn kind="primary" size="sm" icon="plus" onClick={submit}>
+          Ajouter
+        </Btn>
+      </div>
     </div>
   );
 }
@@ -1150,8 +1293,12 @@ function DashboardInner() {
   const [goalMode, setGoalMode] = useLS<"net" | "brut">("disc.goalMode", "net");
 
   const [counters, setCounters] = useLS<Record<string, MonthCounters>>("disc.counters", {});
-  const cur = counters[mk] || emptyCounters();
+  const cur: MonthCounters = { ...emptyCounters(), ...(counters[mk] ?? {}) };
   const setCur = (next: Partial<MonthCounters>) => setCounters((prev) => ({ ...prev, [mk]: { ...cur, ...next } }));
+
+  const addService = (label: string, amount: number) =>
+    setCur({ services: [...cur.services, { id: crypto.randomUUID(), label: label.trim() || "Prestation", amount }] });
+  const removeService = (id: string) => setCur({ services: cur.services.filter((s) => s.id !== id) });
 
   const habits: Habit[] = DEFAULT_HABITS;
   const [history, setHistory] = useLS<Record<string, string[]>>("disc.history", {});
@@ -1163,7 +1310,7 @@ function DashboardInner() {
   };
 
   const fin = computeFinance({ prices, members, fiscal, counters: cur });
-  const { skoolGrossUsd, skoolGrossEur, skoolPlatformEur, brandGrossEur, caBrut, urssafEur, impotEur, netEur } = fin;
+  const { skoolGrossUsd, skoolGrossEur, skoolPlatformEur, brandGrossEur, servicesEur, caBrut, urssafEur, impotEur, netEur } = fin;
 
   const displayTotal = goalMode === "net" ? Math.max(0, netEur) : caBrut;
 
@@ -1184,6 +1331,7 @@ function DashboardInner() {
   const breakdown: Breakdown[] = [
     { key: "skool", color: "#FF6A1A", value: (skoolGrossEur - (goalMode === "net" ? skoolPlatformEur : 0)) * (goalMode === "net" ? netRatio : 1) },
     { key: "brand", color: "#1A1208", value: brandGrossEur * (goalMode === "net" ? netRatio : 1) },
+    { key: "services", color: "#FF9A3C", value: servicesEur * (goalMode === "net" ? netRatio : 1) },
   ];
 
   const remaining = Math.max(0, GOAL - displayTotal);
@@ -1352,6 +1500,10 @@ function DashboardInner() {
             </div>
           }
         />
+      </section>
+
+      <section style={{ maxWidth: 1240, margin: "0 auto", padding: "18px 28px 0" }}>
+        <ServicesCard services={cur.services} total={servicesEur} onAdd={addService} onRemove={removeService} />
       </section>
 
       <section className="coach-row" style={{ maxWidth: 1240, margin: "0 auto", padding: "22px 28px 22px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>

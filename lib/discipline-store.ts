@@ -35,10 +35,17 @@ export interface Fiscal {
   impot: number; // versement libératoire, percent
 }
 
+export interface ServiceEntry {
+  id: string;
+  label: string;
+  amount: number; // € for this one-off service payment
+}
+
 export interface MonthCounters {
   shortVids: number;
   longVids: number;
   posts: number;
+  services: ServiceEntry[];
 }
 
 export type GoalMode = "net" | "brut";
@@ -67,7 +74,7 @@ export const DEFAULT_FISCAL: Fiscal = { urssaf: 24, impot: 2.2 };
 export const DEFAULT_MEMBERS = 24;
 
 export function emptyCounters(): MonthCounters {
-  return { shortVids: 0, longVids: 0, posts: 0 };
+  return { shortVids: 0, longVids: 0, posts: 0, services: [] };
 }
 
 // ── date helpers ──────────────────────────────────────────────────────────
@@ -107,6 +114,7 @@ export interface Finance {
   skoolGrossEur: number;
   skoolPlatformEur: number;
   brandGrossEur: number;
+  servicesEur: number;
   caBrut: number;
   urssafEur: number;
   impotEur: number;
@@ -119,7 +127,8 @@ export function computeFinance({ prices, members, fiscal, counters }: FinanceInp
   const skoolGrossEur = skoolGrossUsd * prices.fx;
   const skoolPlatformEur = prices.skoolCostUsd * prices.fx;
   const brandGrossEur = counters.shortVids * prices.shortVid + counters.longVids * prices.longVid;
-  const caBrut = skoolGrossEur + brandGrossEur;
+  const servicesEur = (counters.services ?? []).reduce((sum, s) => sum + (s.amount || 0), 0);
+  const caBrut = skoolGrossEur + brandGrossEur + servicesEur;
   const urssafEur = caBrut * (fiscal.urssaf / 100);
   const impotEur = caBrut * (fiscal.impot / 100);
   const chargesEur = urssafEur + impotEur;
@@ -129,6 +138,7 @@ export function computeFinance({ prices, members, fiscal, counters }: FinanceInp
     skoolGrossEur,
     skoolPlatformEur,
     brandGrossEur,
+    servicesEur,
     caBrut,
     urssafEur,
     impotEur,
