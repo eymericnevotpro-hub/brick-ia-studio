@@ -1,0 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --color-brand-orange: #FF7A00;
+  --color-brand-orange-light: #FF9A3C;
+  --color-brand-orange-dark: #CC5500;
+  --color-brand-gold: #FFB347;
+  --color-brand-gold-light: #FFD080;
+  --color-brand-bg: #080401;
+  --color-brand-card: #120700;
+  --color-brand-card2: #1A0B00;
+  --color-brand-border: #3D1A00;
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: #080401;
+  color: #fff;
+  font-family: 'Inter', system-ui, sans-serif;
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: #120700; }
+::-webkit-scrollbar-thumb { background: #FF7A0055; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #FF7A00; }
+
+::selection { background: #FF7A0044; color: #FFB347; }
+
+@keyframes fadeUp {
+  0% { opacity: 0; transform: translateY(24px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up { animation: fadeUp 0.6s ease-out forwards; }
+
+.input-brand {
+  background: #0D0500;
+  border: 1px solid #3D1A00;
+  color: #fff;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.input-brand:focus {
+  border-color: #FF7A00;
+  box-shadow: 0 0 0 3px #FF7A0022;
+}
+
+.input-brand::placeholder { color: #4a2a0a; }
+
+.tag-badge {
+  background: #FF7A0022;
+  border: 1px solid #FF7A0044;
+  color: #FFB347;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 100px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
