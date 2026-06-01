@@ -293,6 +293,287 @@ function StreamCard({
 }
 
 /* ====================================================================== */
+/*  TIMER CARD — live hourly rate                                         */
+/* ====================================================================== */
+type TimerType = "short" | "long" | "custom";
+
+interface TimerState {
+  running: boolean;
+  startedAt: number | null;
+  accumulated: number; // ms
+  type: TimerType;
+  customLabel: string;
+  customAmount: number;
+}
+
+const DEFAULT_TIMER: TimerState = {
+  running: false,
+  startedAt: null,
+  accumulated: 0,
+  type: "short",
+  customLabel: "",
+  customAmount: 0,
+};
+
+function fmtHMS(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+function TimerCard({
+  prices,
+  fiscal,
+  onCountShort,
+  onCountLong,
+  onAddService,
+}: {
+  prices: Prices;
+  fiscal: Fiscal;
+  onCountShort: () => void;
+  onCountLong: () => void;
+  onAddService: (label: string, amount: number) => void;
+}) {
+  const [timer, setTimer] = useLS<TimerState>("disc.timer", DEFAULT_TIMER);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!timer.running) return;
+    const id = setInterval(() => setNow(Date.now()), 500);
+    return () => clearInterval(id);
+  }, [timer.running]);
+
+  const elapsed = timer.running && timer.startedAt ? timer.accumulated + (now - timer.startedAt) : timer.accumulated;
+  const amount = timer.type === "short" ? prices.shortVid : timer.type === "long" ? prices.longVid : timer.customAmount;
+  const hours = elapsed / 3_600_000;
+  const netRatio = 1 - (fiscal.urssaf + fiscal.impot) / 100;
+  const brutPerHour = hours > 0 ? amount / hours : 0;
+  const netPerHour = brutPerHour * netRatio;
+  const hasRate = hours > 0 && amount > 0;
+  const paused = !timer.running && timer.accumulated > 0;
+  const canSave = elapsed > 0 && amount > 0;
+
+  const start = () => setTimer({ ...timer, running: true, startedAt: Date.now() });
+  const pause = () => setTimer({ ...timer, running: false, startedAt: null, accumulated: elapsed });
+  const reset = () => setTimer({ ...DEFAULT_TIMER, type: timer.type, customLabel: timer.customLabel, customAmount: timer.customAmount });
+  const save = () => {
+    if (!canSave) return;
+    if (timer.type === "short") onCountShort();
+    else if (timer.type === "long") onCountLong();
+    else onAddService(timer.customLabel || "Prestation", timer.customAmount);
+    reset();
+  };
+  const switchType = (t: TimerType) => {
+    // Switching type mid-session resets the clock to avoid mis-attribution.
+    setTimer({ ...DEFAULT_TIMER, type: t, customLabel: timer.customLabel, customAmount: timer.customAmount });
+  };
+
+  const types: { id: TimerType; label: string; hint: string }[] = [
+    { id: "short", label: "Vidéo courte", hint: fmtEur(prices.shortVid) },
+    { id: "long", label: "Vidéo longue", hint: fmtEur(prices.longVid) },
+    { id: "custom", label: "Prestation libre", hint: timer.customAmount > 0 ? fmtEur(timer.customAmount) : "—" },
+  ];
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        background: "var(--card)",
+        borderRadius: 24,
+        padding: 22,
+        boxShadow: "var(--shadow-sm)",
+        border: "1px solid var(--line)",
+        display: "flex",
+        flexDirection: "column",
+        gap: 16,
+        animation: "fade-up 600ms var(--ease-out) backwards",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ width: 8, height: 8, borderRadius: 4, background: timer.running ? "var(--orange)" : "var(--ink-3)", boxShadow: timer.running ? "0 0 0 4px rgba(255,106,26,0.18)" : "none", transition: "box-shadow 220ms, background 220ms" }} />
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, letterSpacing: "-0.01em" }}>
+              Chronomètre · taux horaire en direct
+            </h3>
+          </div>
+          <div style={{ fontSize: 12.5, color: "var(--ink-2)", marginTop: 4, marginLeft: 16 }}>
+            Choisis la tâche, démarre, vois ton €/h en temps réel.
+          </div>
+        </div>
+        {timer.running && (
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "var(--orange)",
+              fontFamily: "Geist Mono, monospace",
+              animation: "nudge 1.5s ease-in-out infinite",
+            }}
+          >
+            ● en cours
+          </span>
+        )}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+        {types.map((t) => {
+          const active = timer.type === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => switchType(t.id)}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
+                gap: 2,
+                padding: "10px 14px",
+                background: active ? "var(--orange-50)" : "var(--bg-2)",
+                border: active ? "1.5px solid var(--orange)" : "1.5px solid transparent",
+                borderRadius: 14,
+                textAlign: "left",
+                transition: "all 220ms var(--ease-out)",
+              }}
+            >
+              <span style={{ fontSize: 13, fontWeight: 600, color: active ? "var(--orange)" : "var(--ink)" }}>{t.label}</span>
+              <span className="mono" style={{ fontSize: 11, color: "var(--ink-3)" }}>{t.hint}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {timer.type === "custom" && (
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <input
+            value={timer.customLabel}
+            onChange={(e) => setTimer({ ...timer, customLabel: e.target.value })}
+            placeholder="Libellé de la presta (optionnel)"
+            style={{
+              flex: "1 1 160px",
+              minWidth: 0,
+              background: "var(--bg-2)",
+              border: "1px solid transparent",
+              borderRadius: 12,
+              padding: "10px 14px",
+              fontSize: 13.5,
+              color: "var(--ink)",
+              outline: "none",
+            }}
+          />
+          <div style={{ display: "flex", alignItems: "center", background: "var(--bg-2)", borderRadius: 12, padding: "10px 14px", width: 130 }}>
+            <input
+              type="number"
+              min={0}
+              value={timer.customAmount || ""}
+              onChange={(e) => setTimer({ ...timer, customAmount: Math.max(0, Number(e.target.value) || 0) })}
+              placeholder="Montant"
+              style={{ flex: 1, width: "100%", background: "transparent", border: "none", outline: "none", fontSize: 15, fontFamily: "Geist Mono, monospace", fontWeight: 600, color: "var(--ink)" }}
+            />
+            <span style={{ fontSize: 13, color: "var(--ink-2)" }}>€</span>
+          </div>
+        </div>
+      )}
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(180px, 1fr) 1fr 1fr",
+          gap: 12,
+          alignItems: "stretch",
+        }}
+        className="timer-grid"
+      >
+        <div
+          style={{
+            background: "var(--ink)",
+            color: "white",
+            borderRadius: 16,
+            padding: "16px 18px",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            gap: 4,
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              top: -30,
+              right: -30,
+              width: 120,
+              height: 120,
+              borderRadius: "50%",
+              background: "radial-gradient(closest-side, rgba(255,106,26,0.45), transparent 70%)",
+              pointerEvents: "none",
+            }}
+          />
+          <div style={{ fontSize: 10.5, color: "var(--orange-soft)", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 600, position: "relative" }}>
+            Temps écoulé
+          </div>
+          <div className="mono" style={{ fontSize: 34, fontWeight: 600, letterSpacing: "-0.02em", lineHeight: 1.1, position: "relative" }}>
+            {fmtHMS(elapsed)}
+          </div>
+        </div>
+
+        <RateTile label="Taux horaire brut" value={hasRate ? brutPerHour : null} accent />
+        <RateTile label="Taux horaire net" value={hasRate ? netPerHour : null} />
+      </div>
+
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {!timer.running && (
+          <Btn kind="primary" size="md" icon="play" onClick={start}>
+            {paused ? "Reprendre" : "Démarrer"}
+          </Btn>
+        )}
+        {timer.running && (
+          <Btn kind="dark" size="md" onClick={pause}>
+            Pause
+          </Btn>
+        )}
+        {canSave && (
+          <Btn kind="soft" size="md" icon="check" onClick={save}>
+            Valider {timer.type === "short" ? "+1 courte" : timer.type === "long" ? "+1 longue" : "la presta"}
+          </Btn>
+        )}
+        {(timer.accumulated > 0 || timer.running) && (
+          <Btn kind="ghost" size="md" onClick={reset}>
+            Annuler
+          </Btn>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RateTile({ label, value, accent }: { label: string; value: number | null; accent?: boolean }) {
+  return (
+    <div
+      style={{
+        background: "var(--bg-2)",
+        borderRadius: 16,
+        padding: "16px 18px",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        gap: 4,
+      }}
+    >
+      <div style={{ fontSize: 10.5, color: "var(--ink-3)", letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 600 }}>{label}</div>
+      <div className="mono" style={{ fontSize: 28, fontWeight: 600, letterSpacing: "-0.02em", color: accent ? "var(--orange)" : "var(--ink)", lineHeight: 1.05 }}>
+        {value == null ? "—" : `${Math.round(value).toLocaleString("fr-FR")} €/h`}
+      </div>
+    </div>
+  );
+}
+
+/* ====================================================================== */
 /*  SERVICES CARD — custom one-off prestation payments                    */
 /* ====================================================================== */
 function ServicesCard({
@@ -1299,6 +1580,8 @@ function DashboardInner() {
   const addService = (label: string, amount: number) =>
     setCur({ services: [...cur.services, { id: crypto.randomUUID(), label: label.trim() || "Prestation", amount }] });
   const removeService = (id: string) => setCur({ services: cur.services.filter((s) => s.id !== id) });
+  const addShort = () => setCur({ shortVids: cur.shortVids + 1 });
+  const addLong = () => setCur({ longVids: cur.longVids + 1 });
 
   const habits: Habit[] = DEFAULT_HABITS;
   const [history, setHistory] = useLS<Record<string, string[]>>("disc.history", {});
@@ -1503,6 +1786,10 @@ function DashboardInner() {
       </section>
 
       <section style={{ maxWidth: 1240, margin: "0 auto", padding: "18px 28px 0" }}>
+        <TimerCard prices={prices} fiscal={fiscal} onCountShort={addShort} onCountLong={addLong} onAddService={addService} />
+      </section>
+
+      <section style={{ maxWidth: 1240, margin: "0 auto", padding: "18px 28px 0" }}>
         <ServicesCard services={cur.services} total={servicesEur} onAdd={addService} onRemove={removeService} />
       </section>
 
@@ -1553,6 +1840,7 @@ function DashboardInner() {
           .coach-row { grid-template-columns: 1fr !important; }
           .charges { grid-template-columns: 1fr 1fr !important; row-gap: 14px !important; }
           .charges > span { display: none !important; }
+          .timer-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </div>
