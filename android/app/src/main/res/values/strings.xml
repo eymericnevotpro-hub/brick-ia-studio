@@ -3,4 +3,7 @@
     <string name="app_name">Discipline</string>
     <string name="widget_label">Discipline — Aujourd\'hui</string>
     <string name="widget_description">Ta tâche en cours et ta progression du jour.</string>
+    <string name="todo_widget_label">Discipline — À faire</string>
+    <string name="todo_widget_description">Ta liste de tâches à cocher, modifiable.</string>
+
 </resources>

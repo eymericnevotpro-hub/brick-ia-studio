@@ -64,8 +64,11 @@ import com.discipline.app.alarm.AlarmScheduler
 import com.discipline.app.alarm.Notifications
 import com.discipline.app.data.ScheduleRepository
 import com.discipline.app.data.Task
+import com.discipline.app.data.Todo
+import com.discipline.app.data.TodoRepository
 import com.discipline.app.ui.DisciplineTheme
 import com.discipline.app.widget.ScheduleWidget
+import com.discipline.app.widget.TodoWidget
 
 class MainActivity : ComponentActivity() {
 
@@ -82,28 +85,33 @@ class MainActivity : ComponentActivity() {
         AlarmScheduler.rescheduleAll(this)
         ScheduleWidget.refresh(this)
 
+        val initialTab = if (intent?.getStringExtra("open_tab") == "todo") Tab.TODO else Tab.SCHEDULE
+
         setContent {
             DisciplineTheme {
-                ScheduleScreen()
+                AppRoot(initialTab)
             }
         }
     }
 }
+
+private enum class Tab { SCHEDULE, TODO }
 
 private val ORANGE = Color(0xFFFF6A1A)
 private val INK = Color(0xFF1A1208)
 private val MUTED = Color(0xFF6B5D4F)
 
 @Composable
-private fun ScheduleScreen() {
+private fun AppRoot(initialTab: Tab) {
     val ctx = LocalContext.current
+    var tab by remember { mutableStateOf(initialTab) }
 
     var tasks by remember { mutableStateOf(ScheduleRepository.loadTasks(ctx)) }
     var done by remember { mutableStateOf(ScheduleRepository.doneToday(ctx)) }
     var editing by remember { mutableStateOf<Task?>(null) }
     val streak = remember(tasks, done) { ScheduleRepository.streak(ctx) }
 
-    fun persist(newTasks: List<Task>) {
+    fun persistTasks(newTasks: List<Task>) {
         val sorted = newTasks.sortedBy { it.startMinutes }
         tasks = sorted
         ScheduleRepository.saveTasks(ctx, sorted)
@@ -111,7 +119,7 @@ private fun ScheduleScreen() {
         ScheduleWidget.refresh(ctx)
     }
 
-    fun toggle(id: String) {
+    fun toggleTask(id: String) {
         ScheduleRepository.toggleDone(ctx, id)
         done = ScheduleRepository.doneToday(ctx)
         ScheduleWidget.refresh(ctx)
@@ -120,29 +128,34 @@ private fun ScheduleScreen() {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
-            FloatingActionButton(onClick = { editing = Task() }, containerColor = ORANGE) {
-                Icon(Icons.Filled.Add, contentDescription = "Ajouter", tint = Color.White)
+            if (tab == Tab.SCHEDULE) {
+                FloatingActionButton(onClick = { editing = Task() }, containerColor = ORANGE) {
+                    Icon(Icons.Filled.Add, contentDescription = "Ajouter", tint = Color.White)
+                }
             }
         },
     ) { inner ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(inner)
                 .padding(horizontal = 16.dp),
         ) {
-            item { Header(done = done.size, total = tasks.size, streak = streak) }
-            item { Spacer(Modifier.height(8.dp)) }
-            items(tasks, key = { it.id }) { task ->
-                TaskRow(
-                    task = task,
-                    done = done.contains(task.id),
-                    onToggle = { toggle(task.id) },
-                    onEdit = { editing = task },
-                )
-                Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(16.dp))
+            TabBar(tab = tab, onSelect = { tab = it })
+            Spacer(Modifier.height(8.dp))
+            Box(Modifier.weight(1f)) {
+                when (tab) {
+                    Tab.SCHEDULE -> ScheduleList(
+                        tasks = tasks,
+                        done = done,
+                        streak = streak,
+                        onToggle = { toggleTask(it) },
+                        onEdit = { editing = it },
+                    )
+                    Tab.TODO -> TodoList()
+                }
             }
-            item { Spacer(Modifier.height(80.dp)) }
         }
     }
 
@@ -153,11 +166,11 @@ private fun ScheduleScreen() {
             isNew = isNew,
             onDismiss = { editing = null },
             onSave = { updated ->
-                persist(if (isNew) tasks + updated else tasks.map { if (it.id == updated.id) updated else it })
+                persistTasks(if (isNew) tasks + updated else tasks.map { if (it.id == updated.id) updated else it })
                 editing = null
             },
             onDelete = {
-                persist(tasks.filter { it.id != task.id })
+                persistTasks(tasks.filter { it.id != task.id })
                 editing = null
             },
         )
@@ -165,9 +178,68 @@ private fun ScheduleScreen() {
 }
 
 @Composable
+private fun TabBar(tab: Tab, onSelect: (Tab) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(999.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .padding(4.dp),
+    ) {
+        TabButton("Emploi du temps", tab == Tab.SCHEDULE, Modifier.weight(1f)) { onSelect(Tab.SCHEDULE) }
+        TabButton("À faire", tab == Tab.TODO, Modifier.weight(1f)) { onSelect(Tab.TODO) }
+    }
+}
+
+@Composable
+private fun TabButton(label: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(if (selected) Color.White else Color.Transparent)
+            .clickable { onClick() }
+            .padding(vertical = 10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            label,
+            fontSize = 14.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            color = if (selected) INK else MUTED,
+        )
+    }
+}
+
+/* ----------------------------- Schedule ----------------------------- */
+
+@Composable
+private fun ScheduleList(
+    tasks: List<Task>,
+    done: Set<String>,
+    streak: Int,
+    onToggle: (String) -> Unit,
+    onEdit: (Task) -> Unit,
+) {
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        item { Header(done = done.size, total = tasks.size, streak = streak) }
+        item { Spacer(Modifier.height(8.dp)) }
+        items(tasks, key = { it.id }) { task ->
+            TaskRow(
+                task = task,
+                done = done.contains(task.id),
+                onToggle = { onToggle(task.id) },
+                onEdit = { onEdit(task) },
+            )
+            Spacer(Modifier.height(10.dp))
+        }
+        item { Spacer(Modifier.height(80.dp)) }
+    }
+}
+
+@Composable
 private fun Header(done: Int, total: Int, streak: Int) {
     val pct = if (total > 0) done.toFloat() / total else 0f
-    Column(modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)) {
+    Column(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("🔥", fontSize = 30.sp)
             Spacer(Modifier.width(8.dp))
@@ -351,4 +423,103 @@ private fun TaskEditor(
             }
         },
     )
+}
+
+/* ------------------------------- To-do ------------------------------ */
+
+@Composable
+private fun TodoList() {
+    val ctx = LocalContext.current
+    var todos by remember { mutableStateOf(TodoRepository.load(ctx)) }
+    var input by remember { mutableStateOf("") }
+
+    fun reload() {
+        todos = TodoRepository.load(ctx)
+        TodoWidget.refresh(ctx)
+    }
+
+    Column(Modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            OutlinedTextField(
+                value = input,
+                onValueChange = { input = it },
+                label = { Text("Nouvelle tâche à faire") },
+                singleLine = true,
+                modifier = Modifier.weight(1f),
+            )
+            Spacer(Modifier.width(8.dp))
+            Button(
+                onClick = {
+                    if (input.isNotBlank()) {
+                        TodoRepository.add(ctx, input)
+                        input = ""
+                        reload()
+                    }
+                },
+            ) { Text("Ajouter") }
+        }
+        Spacer(Modifier.height(12.dp))
+
+        LazyColumn(modifier = Modifier.weight(1f)) {
+            items(todos, key = { it.id }) { todo ->
+                TodoRow(
+                    todo = todo,
+                    onToggle = { TodoRepository.toggle(ctx, todo.id); reload() },
+                    onDelete = { TodoRepository.remove(ctx, todo.id); reload() },
+                )
+                Spacer(Modifier.height(8.dp))
+            }
+            if (todos.any { it.done }) {
+                item {
+                    TextButton(onClick = { TodoRepository.clearDone(ctx); reload() }) {
+                        Text("Effacer les tâches faites")
+                    }
+                }
+            }
+            item { Spacer(Modifier.height(40.dp)) }
+        }
+    }
+}
+
+@Composable
+private fun TodoRow(todo: Todo, onToggle: () -> Unit, onDelete: () -> Unit) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = if (todo.done) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface,
+        ),
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(30.dp)
+                    .clip(CircleShape)
+                    .background(if (todo.done) ORANGE else MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                    .clickable { onToggle() },
+                contentAlignment = Alignment.Center,
+            ) {
+                if (todo.done) {
+                    Icon(Icons.Filled.Check, contentDescription = "Fait", tint = Color.White, modifier = Modifier.size(18.dp))
+                }
+            }
+            Spacer(Modifier.width(12.dp))
+            Text(
+                todo.text,
+                fontSize = 15.sp,
+                color = if (todo.done) MUTED else INK,
+                textDecoration = if (todo.done) TextDecoration.LineThrough else TextDecoration.None,
+                modifier = Modifier.weight(1f),
+            )
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Filled.Delete, contentDescription = "Supprimer", tint = MUTED, modifier = Modifier.size(18.dp))
+            }
+        }
+    }
 }

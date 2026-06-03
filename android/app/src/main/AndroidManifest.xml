@@ -52,7 +52,7 @@
             </intent-filter>
         </receiver>
 
-        <!-- Glance app widget (home screen + lock screen on Android 16 QPR2+). -->
+        <!-- Glance app widgets (home screen + lock screen on Android 16 QPR2+). -->
         <receiver
             android:name=".widget.ScheduleWidgetReceiver"
             android:exported="true"
@@ -63,6 +63,18 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/schedule_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.TodoWidgetReceiver"
+            android:exported="true"
+            android:label="@string/todo_widget_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/todo_widget_info" />
         </receiver>
 
     </application>
