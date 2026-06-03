@@ -13,11 +13,8 @@ import androidx.glance.appwidget.updateAll
 import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
-import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
-import androidx.glance.layout.defaultWeight
 import androidx.glance.layout.fillMaxSize
-import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.text.FontWeight
@@ -102,17 +99,10 @@ private fun WidgetUi(data: WidgetData) {
             .clickable(actionStartActivity<MainActivity>()),
         verticalAlignment = Alignment.Top,
     ) {
-        Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                "🔥 Discipline",
-                style = TextStyle(color = ColorProvider(ORANGE), fontSize = 13.sp, fontWeight = FontWeight.Bold),
-            )
-            Spacer(GlanceModifier.defaultWeight())
-            Text(
-                "${data.done}/${data.total}",
-                style = TextStyle(color = ColorProvider(MUTED), fontSize = 13.sp, fontWeight = FontWeight.Medium),
-            )
-        }
+        Text(
+            "🔥 Discipline · ${data.done}/${data.total}",
+            style = TextStyle(color = ColorProvider(ORANGE), fontSize = 13.sp, fontWeight = FontWeight.Bold),
+        )
 
         Spacer(GlanceModifier.height(10.dp))
 
