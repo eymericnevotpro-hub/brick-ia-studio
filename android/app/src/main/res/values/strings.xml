@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Discipline</string>
+    <string name="widget_label">Discipline — Aujourd\'hui</string>
+    <string name="widget_description">Ta tâche en cours et ta progression du jour.</string>
+</resources>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Framework theme (no Material Components dependency needed — the UI is
+         Jetpack Compose). NoActionBar because Compose draws its own chrome. -->
+    <style name="Theme.Discipline" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/cream</item>
+        <item name="android:statusBarColor">@color/cream</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">@color/cream</item>
+    </style>
+</resources>
