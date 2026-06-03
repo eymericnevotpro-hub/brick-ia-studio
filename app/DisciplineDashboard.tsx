@@ -26,6 +26,8 @@ import {
   Fiscal,
   GOAL,
   Habit,
+  ICON_CHOICES,
+  IconName,
   MonthCounters,
   Prices,
   ServiceEntry,
@@ -36,8 +38,10 @@ import {
   fmtUsd,
   monthKey,
   monthLabel,
+  newHabit,
   todayKey,
 } from "@/lib/discipline-store";
+import { InstallPrompt, RemindersCard, useReminders } from "@/components/pwa";
 
 type Breakdown = { key: string; color: string; value: number };
 
@@ -928,10 +932,12 @@ function HabitsSection({
   habits,
   todayChecks,
   setTodayChecks,
+  onEdit,
 }: {
   habits: Habit[];
   todayChecks: string[];
   setTodayChecks: (next: string[] | ((p: string[]) => string[])) => void;
+  onEdit?: () => void;
 }) {
   const toggle = (id: string) => {
     setTodayChecks((prev) => {
@@ -993,6 +999,31 @@ function HabitsSection({
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {onEdit && (
+            <button
+              onClick={onEdit}
+              title="Modifier l'emploi du temps"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "6px 12px",
+                background: "var(--bg-2)",
+                color: "var(--ink-2)",
+                borderRadius: 999,
+                fontSize: 12.5,
+                fontWeight: 500,
+                border: "1px solid var(--line)",
+                transition: "transform 200ms var(--bounce), color 160ms",
+              }}
+              onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.94)")}
+              onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+              onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+            >
+              <Icon name="calendar" size={14} />
+              Éditer
+            </button>
+          )}
           <span
             className="mono"
             style={{
@@ -1550,6 +1581,223 @@ function NeedTile({ big, label, sub }: { big: number; label: string; sub: string
 }
 
 /* ====================================================================== */
+/*  SCHEDULE EDITOR                                                       */
+/* ====================================================================== */
+function HabitEditorRow({
+  habit,
+  onChange,
+  onRemove,
+}: {
+  habit: Habit;
+  onChange: (next: Habit) => void;
+  onRemove: () => void;
+}) {
+  const inputBase: React.CSSProperties = {
+    background: "var(--bg-2)",
+    border: "1px solid transparent",
+    borderRadius: 10,
+    padding: "9px 11px",
+    fontSize: 13.5,
+    color: "var(--ink)",
+    outline: "none",
+  };
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 10,
+        padding: 14,
+        background: "var(--card)",
+        border: "1px solid var(--line)",
+        borderRadius: 16,
+      }}
+    >
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <input
+          type="time"
+          value={habit.time}
+          onChange={(e) => onChange({ ...habit, time: e.target.value })}
+          className="mono"
+          style={{ ...inputBase, width: 110, fontWeight: 600 }}
+        />
+        <input
+          value={habit.label}
+          onChange={(e) => onChange({ ...habit, label: e.target.value })}
+          placeholder="Nom de la tâche"
+          style={{ ...inputBase, flex: 1, minWidth: 0 }}
+        />
+        <button
+          onClick={onRemove}
+          title="Supprimer"
+          style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--bg-2)", border: "1px solid var(--line)", display: "grid", placeItems: "center", color: "var(--ink-3)", flexShrink: 0 }}
+        >
+          <Icon name="x" size={14} />
+        </button>
+      </div>
+
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 4, background: "var(--bg-2)", borderRadius: 10, padding: 4 }}>
+          {ICON_CHOICES.map((ic) => {
+            const sel = habit.icon === ic;
+            return (
+              <button
+                key={ic}
+                onClick={() => onChange({ ...habit, icon: ic as IconName })}
+                title={ic}
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: 8,
+                  display: "grid",
+                  placeItems: "center",
+                  background: sel ? "var(--orange)" : "transparent",
+                  color: sel ? "white" : "var(--ink-3)",
+                  transition: "all 160ms",
+                }}
+              >
+                <Icon name={ic} size={16} color={sel ? "white" : "var(--ink-3)"} />
+              </button>
+            );
+          })}
+        </div>
+        <label style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--bg-2)", borderRadius: 10, padding: "7px 10px" }}>
+          <input
+            type="number"
+            min={5}
+            step={5}
+            value={habit.duration}
+            onChange={(e) => onChange({ ...habit, duration: Math.max(5, Number(e.target.value) || 0) })}
+            className="mono"
+            style={{ width: 42, background: "transparent", border: "none", outline: "none", fontSize: 13.5, fontWeight: 600, color: "var(--ink)" }}
+          />
+          <span style={{ fontSize: 12, color: "var(--ink-3)" }}>min</span>
+        </label>
+        <label style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--bg-2)", borderRadius: 10, padding: "7px 10px" }}>
+          <input
+            type="number"
+            min={0}
+            step={5}
+            value={habit.xp}
+            onChange={(e) => onChange({ ...habit, xp: Math.max(0, Number(e.target.value) || 0) })}
+            className="mono"
+            style={{ width: 42, background: "transparent", border: "none", outline: "none", fontSize: 13.5, fontWeight: 600, color: "var(--orange)" }}
+          />
+          <span style={{ fontSize: 12, color: "var(--ink-3)" }}>XP</span>
+        </label>
+        <button
+          onClick={() => onChange({ ...habit, remind: habit.remind === false })}
+          title="Rappel sur l'écran verrouillé"
+          style={{
+            marginLeft: "auto",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "7px 12px",
+            borderRadius: 999,
+            fontSize: 12.5,
+            fontWeight: 500,
+            background: habit.remind === false ? "var(--bg-2)" : "var(--orange-50)",
+            color: habit.remind === false ? "var(--ink-3)" : "var(--orange)",
+            border: "1px solid transparent",
+          }}
+        >
+          {habit.remind === false ? "🔕 Sans rappel" : "🔔 Rappel"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ScheduleEditor({
+  open,
+  onClose,
+  habits,
+  setHabits,
+}: {
+  open: boolean;
+  onClose: () => void;
+  habits: Habit[];
+  setHabits: (v: Habit[] | ((p: Habit[]) => Habit[])) => void;
+}) {
+  if (!open) return null;
+  const sorted = [...habits].sort((a, b) => a.time.localeCompare(b.time));
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 80,
+        background: "rgba(26,18,8,0.32)",
+        display: "grid",
+        placeItems: "center",
+        animation: "fade-up 240ms var(--ease-out)",
+        overflow: "auto",
+        padding: 20,
+      }}
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "var(--card)",
+          width: "min(560px, 94vw)",
+          borderRadius: 24,
+          padding: 28,
+          boxShadow: "var(--shadow-lg)",
+          animation: "pop-in 360ms var(--bounce)",
+          maxHeight: "92vh",
+          overflowY: "auto",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18, position: "sticky", top: -28, background: "var(--card)", paddingTop: 4, paddingBottom: 12, zIndex: 2 }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600, letterSpacing: "-0.01em" }}>Mon emploi du temps</h3>
+            <div style={{ fontSize: 12, color: "var(--ink-2)", marginTop: 2 }}>{habits.length} tâche{habits.length > 1 ? "s" : ""} · trié par heure</div>
+          </div>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--bg-2)", display: "grid", placeItems: "center" }}>
+            <Icon name="x" size={16} />
+          </button>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {sorted.map((h) => (
+            <HabitEditorRow
+              key={h.id}
+              habit={h}
+              onChange={(next) => setHabits((prev) => prev.map((x) => (x.id === h.id ? next : x)))}
+              onRemove={() => setHabits((prev) => prev.filter((x) => x.id !== h.id))}
+            />
+          ))}
+          {habits.length === 0 && (
+            <div style={{ fontSize: 13, color: "var(--ink-3)", textAlign: "center", padding: "24px 0" }}>
+              Aucune tâche. Ajoute ta première ci-dessous.
+            </div>
+          )}
+        </div>
+
+        <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
+          <Btn kind="primary" size="md" icon="plus" onClick={() => setHabits((prev) => [...prev, newHabit()])}>
+            Ajouter une tâche
+          </Btn>
+          <Btn
+            kind="ghost"
+            size="md"
+            onClick={() => {
+              if (confirm("Revenir à l'emploi du temps par défaut ? Tes tâches personnalisées seront remplacées.")) {
+                setHabits(DEFAULT_HABITS.map((h) => ({ ...h })));
+              }
+            }}
+          >
+            Réinitialiser
+          </Btn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ====================================================================== */
 /*  APP                                                                   */
 /* ====================================================================== */
 export default function DisciplineDashboard() {
@@ -1583,7 +1831,9 @@ function DashboardInner() {
   const addShort = () => setCur({ shortVids: cur.shortVids + 1 });
   const addLong = () => setCur({ longVids: cur.longVids + 1 });
 
-  const habits: Habit[] = DEFAULT_HABITS;
+  const [habits, setHabits] = useLS<Habit[]>("disc.habits.v1", DEFAULT_HABITS);
+  const reminders = useReminders(habits);
+  const [editorOpen, setEditorOpen] = useState(false);
   const [history, setHistory] = useLS<Record<string, string[]>>("disc.history", {});
   const tk = todayKey();
   const todayChecks = history[tk] || [];
@@ -1634,7 +1884,11 @@ function DashboardInner() {
     <div style={{ position: "relative", zIndex: 1, minHeight: "100vh" }}>
       <Confetti active={confetti} />
 
-      <header style={{ maxWidth: 1240, margin: "0 auto", padding: "32px 28px 8px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+      <div style={{ paddingTop: 8 }}>
+        <InstallPrompt />
+      </div>
+
+      <header style={{ maxWidth: 1240, margin: "0 auto", padding: "24px 28px 8px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ width: 40, height: 40, borderRadius: 12, background: "var(--ink)", color: "var(--orange)", display: "grid", placeItems: "center", boxShadow: "var(--shadow-md)" }}>
             <Icon name="flame" size={22} />
@@ -1810,14 +2064,19 @@ function DashboardInner() {
       </section>
 
       <section className="habits-row" style={{ maxWidth: 1240, margin: "0 auto", padding: "0 28px 60px", display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 18 }}>
-        <HabitsSection habits={habits} todayChecks={todayChecks} setTodayChecks={setTodayChecks} />
-        <StreakStrip history={history} habits={habits} />
+        <HabitsSection habits={habits} todayChecks={todayChecks} setTodayChecks={setTodayChecks} onEdit={() => setEditorOpen(true)} />
+        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          <StreakStrip history={history} habits={habits} />
+          <RemindersCard api={reminders} />
+        </div>
       </section>
 
       <footer style={{ maxWidth: 1240, margin: "0 auto", padding: "0 28px 40px", fontSize: 12, color: "var(--ink-3)", display: "flex", alignItems: "center", gap: 6 }}>
         <Icon name="dot" size={10} color="var(--orange)" />
         Tout est enregistré localement sur ton appareil. Reviens chaque jour.
       </footer>
+
+      <ScheduleEditor open={editorOpen} onClose={() => setEditorOpen(false)} habits={habits} setHabits={setHabits} />
 
       <Settings
         open={settingsOpen}

@@ -20,6 +20,30 @@ export interface Habit {
   time: string; // "HH:MM"
   duration: number; // minutes
   xp: number; // reward when checked (gamification)
+  remind?: boolean; // send a lock-screen reminder (defaults to true)
+}
+
+// Default lead time, in minutes, for reminders (notify N min before the slot).
+export const DEFAULT_LEAD = 5;
+
+export const ICON_CHOICES: IconName[] = [
+  "spark",
+  "bolt",
+  "play",
+  "wave",
+  "users",
+  "target",
+  "calendar",
+];
+
+let habitSeq = 0;
+export function newHabit(): Habit {
+  // crypto.randomUUID is available in the browser; fall back for SSR safety.
+  const id =
+    typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `h${Date.now()}-${habitSeq++}`;
+  return { id, label: "", icon: "spark", time: "09:00", duration: 30, xp: 10, remind: true };
 }
 
 export interface Prices {
