@@ -3,6 +3,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { Btn, Icon, useLS } from "@/components/discipline-ui";
 import MovementArt from "@/components/MovementArt";
+import PlancheCoach from "@/components/PlancheCoach";
 import { Block, PHASES, Phase, SAFETY_NOTES, WEEKLY_SCHEDULE } from "@/lib/planche-data";
 
 const PHASE_ART: Record<string, "lean" | "tuck" | "adv-tuck" | "straddle" | "full"> = {
@@ -169,6 +170,10 @@ function Inner() {
             </div>
           </details>
         </div>
+      </section>
+
+      <section style={{ maxWidth: 1240, margin: "0 auto", padding: "0 28px 28px" }}>
+        <PlancheCoach />
       </section>
 
       <section style={{ maxWidth: 1240, margin: "0 auto", padding: "0 28px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
