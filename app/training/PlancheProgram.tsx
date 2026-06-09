@@ -2,7 +2,20 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import { Btn, Icon, useLS } from "@/components/discipline-ui";
+import MovementArt from "@/components/MovementArt";
 import { Block, PHASES, Phase, SAFETY_NOTES, WEEKLY_SCHEDULE } from "@/lib/planche-data";
+
+const PHASE_ART: Record<string, "lean" | "tuck" | "adv-tuck" | "straddle" | "full"> = {
+  lean: "lean",
+  tuck: "tuck",
+  "adv-tuck": "adv-tuck",
+  straddle: "straddle",
+  full: "full",
+};
+
+function youtubeSearch(query: string) {
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(query + " tutorial")}`;
+}
 
 const BLOCK_COLORS: Record<Block["kind"], { bg: string; ink: string; label: string }> = {
   warmup: { bg: "#FFF1E2", ink: "#C44A00", label: "Échauffement" },
@@ -187,6 +200,7 @@ function Inner() {
         @media (max-width: 900px) {
           .planche-hero { grid-template-columns: 1fr !important; }
           .week-grid { grid-template-columns: repeat(7, 1fr) !important; }
+          .phase-head { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 640px) {
           .week-grid { grid-template-columns: repeat(4, 1fr) !important; }
@@ -283,7 +297,10 @@ function PhaseCard({
 
       {open && (
         <div style={{ padding: "0 22px 22px", display: "flex", flexDirection: "column", gap: 18, animation: "fade-up 360ms var(--ease-out)" }}>
-          <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: "var(--ink)" }}>{phase.description}</p>
+          <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", gap: 18, alignItems: "start" }} className="phase-head">
+            <MovementArt phase={PHASE_ART[phase.id]} />
+            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: "var(--ink)" }}>{phase.description}</p>
+          </div>
 
           <Pillared title="Prérequis">
             <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: "var(--ink-2)", lineHeight: 1.6 }}>
@@ -346,7 +363,28 @@ function BlockCard({ block }: { block: Block }) {
             }}
           >
             <div>
-              <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--ink)" }}>{ex.name}</div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--ink)" }}>{ex.name}</div>
+                <a
+                  href={youtubeSearch(ex.name)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    fontSize: 10.5,
+                    fontWeight: 700,
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                    color: "var(--orange)",
+                    textDecoration: "none",
+                    background: "var(--orange-50)",
+                    padding: "2px 8px",
+                    borderRadius: 999,
+                  }}
+                  title="Ouvrir une recherche YouTube de l'exercice"
+                >
+                  ▶ démo
+                </a>
+              </div>
               <div style={{ fontSize: 12.5, color: "var(--ink-2)", marginTop: 2, lineHeight: 1.5 }}>{ex.detail}</div>
               {ex.note && (
                 <div style={{ fontSize: 11.5, color: "var(--orange)", marginTop: 4, fontStyle: "italic" }}>↳ {ex.note}</div>
