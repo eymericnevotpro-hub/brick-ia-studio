@@ -3,15 +3,20 @@
 import { CSSProperties, useEffect, useState } from "react";
 import { AnimatedNumber, Btn, Icon, useLS } from "@/components/discipline-ui";
 import {
-  DEFAULT_GOALS,
-  Deposit,
+  DEFAULT_STATE,
+  GoalsState,
   Goal,
+  QUICK_AMOUNTS,
   TIMEFRAMES,
+  Transaction,
+  etaFor,
+  fmtDateShort,
   fmtEur,
-  pctFor,
-  remainingFor,
-  savedFor,
+  fmtMonths,
+  monthlyRate,
+  progressOf,
   todayIso,
+  totalSaved,
   uid,
 } from "@/lib/goals-store";
 
@@ -26,42 +31,49 @@ export default function GoalsBoard() {
 }
 
 function Inner() {
-  const [goals, setGoals] = useLS<Goal[]>("disc.goals", DEFAULT_GOALS);
+  const [state, setState] = useLS<GoalsState>("disc.goals.v2", DEFAULT_STATE);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const totalTarget = goals.reduce((s, g) => s + g.target, 0);
-  const totalSaved = goals.reduce((s, g) => s + savedFor(g), 0);
-  const totalRemaining = Math.max(0, totalTarget - totalSaved);
-  const totalPct = totalTarget > 0 ? Math.min(1, totalSaved / totalTarget) : 0;
+  const total = totalSaved(state);
+  const rate = monthlyRate(state);
+  const progresses = progressOf(state);
+  const totalTarget = state.goals.reduce((s, g) => s + g.target, 0);
+  const totalPct = totalTarget > 0 ? Math.min(1, total / totalTarget) : 0;
 
-  const updateGoal = (id: string, patch: Partial<Goal>) => {
-    setGoals((prev) => prev.map((g) => (g.id === id ? { ...g, ...patch } : g)));
+  const addTx = (amount: number, note?: string) => {
+    if (!amount) return;
+    const t: Transaction = { id: uid(), date: todayIso(), amount, note };
+    setState((prev) => ({ ...prev, transactions: [...prev.transactions, t] }));
   };
-  const deleteGoal = (id: string) => {
-    setGoals((prev) => prev.filter((g) => g.id !== id));
+  const removeTx = (id: string) => {
+    setState((prev) => ({ ...prev, transactions: prev.transactions.filter((t) => t.id !== id) }));
+  };
+  const updateGoal = (id: string, patch: Partial<Goal>) => {
+    setState((prev) => ({ ...prev, goals: prev.goals.map((g) => (g.id === id ? { ...g, ...patch } : g)) }));
+  };
+  const removeGoal = (id: string) => {
+    setState((prev) => ({ ...prev, goals: prev.goals.filter((g) => g.id !== id) }));
     if (editingId === id) setEditingId(null);
   };
   const addGoal = () => {
-    const g: Goal = {
-      id: uid(),
-      emoji: "🎯",
-      name: "Nouvel objectif",
-      target: 1000,
-      deposits: [],
-      color: "#FF6A1A",
-      createdAt: todayIso(),
-    };
-    setGoals((prev) => [...prev, g]);
+    const g: Goal = { id: uid(), emoji: "🎯", name: "Nouvel objectif", target: 1000, color: "#FF6A1A" };
+    setState((prev) => ({ ...prev, goals: [...prev.goals, g] }));
     setEditingId(g.id);
   };
-  const addDeposit = (id: string, amount: number, note: string) => {
-    if (!amount) return;
-    const d: Deposit = { id: uid(), date: todayIso(), amount, note: note.trim() || undefined };
-    setGoals((prev) => prev.map((g) => (g.id === id ? { ...g, deposits: [...g.deposits, d] } : g)));
+  const moveGoal = (id: string, delta: number) => {
+    setState((prev) => {
+      const idx = prev.goals.findIndex((g) => g.id === id);
+      if (idx < 0) return prev;
+      const target = Math.max(0, Math.min(prev.goals.length - 1, idx + delta));
+      if (target === idx) return prev;
+      const next = [...prev.goals];
+      const [removed] = next.splice(idx, 1);
+      next.splice(target, 0, removed);
+      return { ...prev, goals: next };
+    });
   };
-  const removeDeposit = (gid: string, did: string) => {
-    setGoals((prev) => prev.map((g) => (g.id === gid ? { ...g, deposits: g.deposits.filter((d) => d.id !== did) } : g)));
-  };
+
+  const recent = [...state.transactions].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 8);
 
   return (
     <div style={{ position: "relative", zIndex: 1, padding: "20px 28px 60px", maxWidth: 1240, margin: "0 auto" }}>
@@ -72,14 +84,14 @@ function Inner() {
           </div>
           <div>
             <div style={{ fontSize: 17, fontWeight: 600, letterSpacing: "-0.02em" }}>Objectifs</div>
-            <div style={{ fontSize: 12, color: "var(--ink-2)" }}>Ce que tu veux acheter · ce que tu mets de côté · combien il manque</div>
+            <div style={{ fontSize: 12, color: "var(--ink-2)" }}>Une cagnotte unique · les rêves se remplissent dans l&apos;ordre</div>
           </div>
         </div>
         <Btn kind="primary" size="md" icon="plus" onClick={addGoal}>Nouvel objectif</Btn>
       </header>
 
-      {/* Combined summary */}
-      <section style={{ marginBottom: 22 }}>
+      {/* CAGNOTTE — global pot with quick +/- buttons */}
+      <section style={{ marginBottom: 18 }}>
         <div
           style={{
             background: "var(--ink)",
@@ -88,67 +100,118 @@ function Inner() {
             padding: 22,
             boxShadow: "var(--shadow-md)",
             display: "grid",
-            gridTemplateColumns: "minmax(220px, 360px) 1fr",
+            gridTemplateColumns: "minmax(220px, 320px) 1fr",
             gap: 24,
             alignItems: "center",
             position: "relative",
             overflow: "hidden",
           }}
-          className="goals-summary"
+          className="cagnotte"
         >
-          <div style={{ position: "absolute", top: -40, right: -40, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(closest-side, rgba(255,106,26,0.5), transparent 70%)", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", top: -40, right: -40, width: 220, height: 220, borderRadius: "50%", background: "radial-gradient(closest-side, rgba(255,106,26,0.5), transparent 70%)", pointerEvents: "none" }} />
           <div style={{ position: "relative" }}>
-            <div style={{ fontSize: 11, color: "var(--orange-soft)", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700 }}>Mes rêves cumulés</div>
+            <div style={{ fontSize: 11, color: "var(--orange-soft)", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700 }}>Ma cagnotte</div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 6 }}>
-              <div style={{ fontSize: 44, fontWeight: 600, letterSpacing: "-0.03em", color: "var(--orange)" }}>
-                <AnimatedNumber value={totalSaved} format={fmtEur} />
+              <div style={{ fontSize: 48, fontWeight: 700, letterSpacing: "-0.03em", color: "var(--orange)" }}>
+                <AnimatedNumber value={total} format={fmtEur} />
               </div>
             </div>
             <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", marginTop: 2 }}>
-              sur {fmtEur(totalTarget)} ({Math.round(totalPct * 100)}%)
+              sur {fmtEur(totalTarget)} cumulés ({Math.round(totalPct * 100)}%)
             </div>
             <div style={{ height: 10, background: "rgba(255,255,255,0.1)", borderRadius: 999, marginTop: 12, overflow: "hidden" }}>
               <div style={{ height: "100%", width: `${totalPct * 100}%`, background: "var(--orange)", borderRadius: 999, transition: "width 600ms var(--bounce)" }} />
             </div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 10 }}>
+              {rate > 0
+                ? <>Rythme actuel · <b style={{ color: "var(--orange-soft)" }}>{fmtEur(rate)}/mois</b></>
+                : <>Aucun dépôt récent — ajoute de l&apos;argent pour voir ton rythme.</>}
+            </div>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, position: "relative" }} className="goals-tiles">
-            <Tile label="Reste total" big={fmtEur(totalRemaining)} accent />
-            <Tile label="Objectifs actifs" big={String(goals.length)} />
-            <Tile label="Déjà encaissé" big={fmtEur(totalSaved)} good={totalSaved > 0} />
+
+          <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 700 }}>
+              Ajouter à la cagnotte
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6 }} className="quick-row">
+              {QUICK_AMOUNTS.map((a) => (
+                <QuickBtn key={`p${a}`} variant="plus" onClick={() => addTx(a)}>
+                  +{a}€
+                </QuickBtn>
+              ))}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6 }} className="quick-row">
+              {QUICK_AMOUNTS.map((a) => (
+                <QuickBtn key={`m${a}`} variant="minus" onClick={() => addTx(-a)}>
+                  −{a}€
+                </QuickBtn>
+              ))}
+            </div>
+            <CustomAmount onAdd={addTx} />
           </div>
         </div>
+
+        {recent.length > 0 && (
+          <details style={{ marginTop: 10 }}>
+            <summary style={{ cursor: "pointer", fontSize: 12, color: "var(--ink-2)", fontWeight: 600 }}>
+              Historique ({state.transactions.length} mouvement{state.transactions.length > 1 ? "s" : ""})
+            </summary>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 6, marginTop: 8 }}>
+              {recent.map((d) => (
+                <div key={d.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: "var(--card)", border: "1px solid var(--line)", borderRadius: 10 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div className="mono" style={{ fontSize: 13, fontWeight: 700, color: d.amount >= 0 ? "var(--ink)" : "#C44A00" }}>
+                      {d.amount >= 0 ? "+" : ""}{fmtEur(d.amount)}
+                    </div>
+                    <div style={{ fontSize: 11, color: "var(--ink-3)" }}>
+                      {new Date(d.date).toLocaleDateString("fr-FR")}{d.note ? ` · ${d.note}` : ""}
+                    </div>
+                  </div>
+                  <button onClick={() => removeTx(d.id)} title="Annuler" style={{ fontSize: 11, color: "var(--ink-3)", padding: "4px 8px" }}>✕</button>
+                </div>
+              ))}
+              {state.transactions.length > 8 && (
+                <div style={{ fontSize: 11, color: "var(--ink-3)", padding: 8 }}>
+                  … {state.transactions.length - 8} mouvement{state.transactions.length - 8 > 1 ? "s" : ""} de plus
+                </div>
+              )}
+            </div>
+          </details>
+        )}
       </section>
 
-      {/* Goals grid */}
+      {/* GOALS — filled in priority order */}
       <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(420px, 1fr))", gap: 18 }} className="goals-grid">
-        {goals.length === 0 && (
+        {progresses.length === 0 && (
           <div style={{ background: "var(--card)", border: "1px dashed var(--line)", borderRadius: 18, padding: 28, textAlign: "center" }}>
-            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Aucun objectif pour l&apos;instant</div>
+            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Aucun objectif</div>
             <div style={{ fontSize: 12.5, color: "var(--ink-2)", marginBottom: 14 }}>Ajoute un rêve chiffré pour commencer.</div>
             <Btn kind="primary" size="md" icon="plus" onClick={addGoal}>Créer mon premier objectif</Btn>
           </div>
         )}
-        {goals.map((g) => (
+        {progresses.map((p, i) => (
           <GoalCard
-            key={g.id}
-            goal={g}
-            editing={editingId === g.id}
-            onEdit={() => setEditingId(editingId === g.id ? null : g.id)}
-            onUpdate={(p) => updateGoal(g.id, p)}
-            onDelete={() => deleteGoal(g.id)}
-            onDeposit={(amount, note) => addDeposit(g.id, amount, note)}
-            onRemoveDeposit={(did) => removeDeposit(g.id, did)}
+            key={p.goal.id}
+            p={p}
+            rate={rate}
+            index={i}
+            isLast={i === progresses.length - 1}
+            editing={editingId === p.goal.id}
+            onEdit={() => setEditingId(editingId === p.goal.id ? null : p.goal.id)}
+            onUpdate={(patch) => updateGoal(p.goal.id, patch)}
+            onDelete={() => removeGoal(p.goal.id)}
+            onMove={(d) => moveGoal(p.goal.id, d)}
           />
         ))}
       </section>
 
       <style>{`
         @media (max-width: 900px) {
-          .goals-summary { grid-template-columns: 1fr !important; }
+          .cagnotte { grid-template-columns: 1fr !important; }
           .goals-grid { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 520px) {
-          .goals-tiles { grid-template-columns: 1fr 1fr !important; }
+          .quick-row { grid-template-columns: repeat(3, 1fr) !important; }
         }
       `}</style>
     </div>
@@ -158,39 +221,29 @@ function Inner() {
 /* ── goal card ─────────────────────────────────────────────────────── */
 
 function GoalCard({
-  goal,
+  p,
+  rate,
+  index,
+  isLast,
   editing,
   onEdit,
   onUpdate,
   onDelete,
-  onDeposit,
-  onRemoveDeposit,
+  onMove,
 }: {
-  goal: Goal;
+  p: ReturnType<typeof progressOf>[number];
+  rate: number;
+  index: number;
+  isLast: boolean;
   editing: boolean;
   onEdit: () => void;
   onUpdate: (patch: Partial<Goal>) => void;
   onDelete: () => void;
-  onDeposit: (amount: number, note: string) => void;
-  onRemoveDeposit: (id: string) => void;
+  onMove: (delta: number) => void;
 }) {
-  const saved = savedFor(goal);
-  const remaining = remainingFor(goal);
-  const pct = pctFor(goal);
-  const reached = saved >= goal.target;
-  const [depositAmount, setDepositAmount] = useState("");
-  const [depositNote, setDepositNote] = useState("");
+  const { goal, saved, remaining, pct, reached } = p;
   const [confirmDelete, setConfirmDelete] = useState(false);
-
-  const submitDeposit = () => {
-    const v = Number(depositAmount.replace(",", "."));
-    if (!Number.isFinite(v) || v === 0) return;
-    onDeposit(v, depositNote);
-    setDepositAmount("");
-    setDepositNote("");
-  };
-
-  const recent = [...goal.deposits].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 5);
+  const eta = etaFor(remaining, rate);
 
   return (
     <div
@@ -202,7 +255,7 @@ function GoalCard({
         boxShadow: "var(--shadow-sm)",
         display: "flex",
         flexDirection: "column",
-        gap: 16,
+        gap: 14,
         position: "relative",
         overflow: "hidden",
       }}
@@ -214,11 +267,18 @@ function GoalCard({
         <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
           <div style={{ fontSize: 34, lineHeight: 1, flexShrink: 0 }}>{goal.emoji}</div>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.01em", lineHeight: 1.2 }}>{goal.name}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.01em", lineHeight: 1.2 }}>{goal.name}</div>
+              <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--ink-3)", background: "var(--bg-2)", padding: "2px 8px", borderRadius: 999, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                Priorité #{index + 1}
+              </span>
+            </div>
             <div style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 2 }}>Cible : {fmtEur(goal.target)}</div>
           </div>
         </div>
         <div style={{ display: "flex", gap: 4 }}>
+          <IconBtn title="Reculer dans la priorité" onClick={() => onMove(1)} disabled={isLast}>↓</IconBtn>
+          <IconBtn title="Avancer dans la priorité" onClick={() => onMove(-1)} disabled={index === 0}>↑</IconBtn>
           <IconBtn title="Modifier" onClick={onEdit}>✎</IconBtn>
           <IconBtn title="Supprimer" onClick={() => setConfirmDelete(true)} danger>✕</IconBtn>
         </div>
@@ -255,7 +315,7 @@ function GoalCard({
       {/* Confirm delete */}
       {confirmDelete && (
         <div style={{ background: "rgba(196,74,0,0.08)", border: "1px solid rgba(196,74,0,0.25)", borderRadius: 12, padding: 12, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-          <div style={{ fontSize: 13, color: "#C44A00" }}>Supprimer cet objectif et tous les dépôts associés ?</div>
+          <div style={{ fontSize: 13, color: "#C44A00" }}>Supprimer cet objectif ? (la cagnotte n&apos;est pas touchée)</div>
           <div style={{ display: "flex", gap: 6 }}>
             <Btn kind="ghost" size="sm" onClick={() => setConfirmDelete(false)}>Annuler</Btn>
             <button
@@ -266,10 +326,10 @@ function GoalCard({
         </div>
       )}
 
-      {/* Saved / progress */}
+      {/* Progress */}
       <div>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
-          <div style={{ fontSize: 34, fontWeight: 700, letterSpacing: "-0.03em", color: "var(--ink)" }}>
+          <div style={{ fontSize: 32, fontWeight: 700, letterSpacing: "-0.03em", color: "var(--ink)" }}>
             <AnimatedNumber value={saved} format={fmtEur} />
           </div>
           <div className="mono" style={{ fontSize: 13, color: "var(--ink-2)" }}>
@@ -284,91 +344,129 @@ function GoalCard({
         </div>
       </div>
 
-      {/* Projections */}
+      {/* Dynamic ETA from real saving rate */}
+      {!reached && (
+        <div style={{ background: rate > 0 ? "var(--orange-50)" : "var(--bg-2)", border: `1px solid ${rate > 0 ? "var(--orange-100)" : "var(--line)"}`, borderRadius: 14, padding: "12px 14px" }}>
+          <div style={{ fontSize: 10.5, color: rate > 0 ? "var(--orange)" : "var(--ink-3)", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 700 }}>
+            À ton rythme actuel
+          </div>
+          {rate <= 0 ? (
+            <div style={{ fontSize: 13, color: "var(--ink-2)", marginTop: 4 }}>
+              Mets quelque chose dans la cagnotte pour estimer un délai.
+            </div>
+          ) : eta == null ? (
+            <div style={{ fontSize: 13, color: "var(--ink-2)", marginTop: 4 }}>—</div>
+          ) : (
+            <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginTop: 2 }}>
+              <div style={{ fontSize: 22, fontWeight: 700, color: "var(--orange)", letterSpacing: "-0.02em" }}>
+                {fmtMonths(eta.months)}
+              </div>
+              <div className="mono" style={{ fontSize: 12.5, color: "var(--ink-2)" }}>
+                ≈ {fmtDateShort(eta.date)} · {fmtEur(rate)}/mois
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Manual timeframes (how much/month to hit a chosen window) */}
       {!reached && (
         <div>
-          <div style={{ fontSize: 11, color: "var(--ink-3)", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 700, marginBottom: 8 }}>
-            Pour y arriver, mets de côté :
+          <div style={{ fontSize: 10.5, color: "var(--ink-3)", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 700, marginBottom: 6 }}>
+            Pour viser plus court
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 8 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 6 }}>
             {TIMEFRAMES.map((t) => {
               const monthly = remaining / t.months;
-              const weekly = monthly / (52 / 12);
               return (
-                <div key={t.label} style={{ background: "var(--bg-2)", borderRadius: 12, padding: "10px 12px" }}>
-                  <div style={{ fontSize: 10.5, color: "var(--ink-3)", letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 600 }}>en {t.label}</div>
-                  <div className="mono" style={{ fontSize: 17, fontWeight: 700, color: "var(--orange)", marginTop: 2, letterSpacing: "-0.02em" }}>{fmtEur(monthly)}<span style={{ fontSize: 11, color: "var(--ink-3)", fontWeight: 500 }}>/mois</span></div>
-                  <div style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 2 }}>≈ {fmtEur(weekly)}/sem.</div>
+                <div key={t.label} style={{ background: "var(--bg-2)", borderRadius: 10, padding: "8px 10px" }}>
+                  <div style={{ fontSize: 10, color: "var(--ink-3)", letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 600 }}>en {t.label}</div>
+                  <div className="mono" style={{ fontSize: 15, fontWeight: 700, color: "var(--ink)", marginTop: 1 }}>
+                    {fmtEur(monthly)}<span style={{ fontSize: 10, color: "var(--ink-3)", fontWeight: 500 }}>/mois</span>
+                  </div>
                 </div>
               );
             })}
           </div>
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* Deposit input */}
-      <div style={{ background: "var(--bg-2)", borderRadius: 14, padding: 12, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        <div style={{ display: "flex", alignItems: "center", background: "white", borderRadius: 10, padding: "8px 12px", width: 130 }}>
-          <input
-            type="number"
-            placeholder="100"
-            value={depositAmount}
-            onChange={(e) => setDepositAmount(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && submitDeposit()}
-            style={{ flex: 1, width: "100%", background: "transparent", border: "none", outline: "none", fontSize: 16, fontFamily: "Geist Mono, monospace", fontWeight: 700, color: "var(--ink)" }}
-          />
-          <span style={{ fontSize: 13, color: "var(--ink-2)" }}>€</span>
-        </div>
+/* ── quick add buttons + custom amount ────────────────────────────── */
+
+function QuickBtn({ children, onClick, variant }: { children: React.ReactNode; onClick: () => void; variant: "plus" | "minus" }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: "10px 4px",
+        borderRadius: 12,
+        background: variant === "plus" ? "var(--orange)" : "rgba(255,255,255,0.06)",
+        color: variant === "plus" ? "white" : "rgba(255,255,255,0.85)",
+        border: variant === "plus" ? "1px solid var(--orange)" : "1px solid rgba(255,255,255,0.15)",
+        fontFamily: "Geist Mono, monospace",
+        fontSize: 14,
+        fontWeight: 700,
+        transition: "transform 220ms var(--bounce-strong), background 160ms ease",
+      }}
+      onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.92)")}
+      onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+      onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+    >
+      {children}
+    </button>
+  );
+}
+
+function CustomAmount({ onAdd }: { onAdd: (amount: number, note?: string) => void }) {
+  const [amount, setAmount] = useState("");
+  const [note, setNote] = useState("");
+
+  const submit = (sign: 1 | -1) => {
+    const v = Number(amount.replace(",", "."));
+    if (!Number.isFinite(v) || v === 0) return;
+    onAdd(sign * Math.abs(v), note.trim() || undefined);
+    setAmount("");
+    setNote("");
+  };
+
+  return (
+    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginTop: 4 }}>
+      <div style={{ display: "flex", alignItems: "center", background: "rgba(255,255,255,0.08)", borderRadius: 10, padding: "8px 12px", width: 130 }}>
         <input
-          value={depositNote}
-          onChange={(e) => setDepositNote(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && submitDeposit()}
-          placeholder="note (optionnel)"
-          style={{ flex: "1 1 120px", minWidth: 0, padding: "10px 12px", background: "white", border: "1px solid transparent", borderRadius: 10, outline: "none", fontSize: 13, color: "var(--ink)" }}
+          type="number"
+          placeholder="Montant"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && submit(1)}
+          style={{ flex: 1, width: "100%", background: "transparent", border: "none", outline: "none", fontSize: 14, fontFamily: "Geist Mono, monospace", fontWeight: 700, color: "white" }}
         />
-        <Btn kind="primary" size="sm" icon="plus" onClick={submitDeposit}>Ajouter</Btn>
+        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.55)" }}>€</span>
       </div>
-
-      {/* Recent deposits */}
-      {recent.length > 0 && (
-        <details>
-          <summary style={{ cursor: "pointer", fontSize: 12, color: "var(--ink-2)", fontWeight: 600 }}>
-            Historique ({goal.deposits.length} dépôt{goal.deposits.length > 1 ? "s" : ""})
-          </summary>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
-            {recent.map((d) => (
-              <div key={d.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 10px", background: "var(--bg-2)", borderRadius: 8 }}>
-                <div style={{ minWidth: 0 }}>
-                  <div className="mono" style={{ fontSize: 13, fontWeight: 700, color: d.amount >= 0 ? "var(--ink)" : "#C44A00" }}>
-                    {d.amount >= 0 ? "+" : ""}{fmtEur(d.amount)}
-                  </div>
-                  <div style={{ fontSize: 11, color: "var(--ink-3)" }}>
-                    {new Date(d.date).toLocaleDateString("fr-FR")}{d.note ? ` · ${d.note}` : ""}
-                  </div>
-                </div>
-                <button onClick={() => onRemoveDeposit(d.id)} title="Retirer ce dépôt" style={{ fontSize: 11, color: "var(--ink-3)", padding: "4px 8px" }}>✕</button>
-              </div>
-            ))}
-            {goal.deposits.length > 5 && (
-              <div style={{ fontSize: 11, color: "var(--ink-3)" }}>… {goal.deposits.length - 5} autre{goal.deposits.length - 5 > 1 ? "s" : ""} non affiché·s.</div>
-            )}
-          </div>
-        </details>
-      )}
+      <input
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && submit(1)}
+        placeholder="note (optionnel)"
+        style={{ flex: "1 1 120px", minWidth: 0, padding: "9px 12px", background: "rgba(255,255,255,0.08)", border: "1px solid transparent", borderRadius: 10, outline: "none", fontSize: 13, color: "white" }}
+      />
+      <button
+        onClick={() => submit(1)}
+        title="Ajouter"
+        style={{ padding: "8px 14px", borderRadius: 10, background: "var(--orange)", color: "white", fontWeight: 700, fontSize: 14 }}
+      >+</button>
+      <button
+        onClick={() => submit(-1)}
+        title="Retirer"
+        style={{ padding: "8px 14px", borderRadius: 10, background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.85)", border: "1px solid rgba(255,255,255,0.15)", fontWeight: 700, fontSize: 14 }}
+      >−</button>
     </div>
   );
 }
 
 /* ── small helpers ────────────────────────────────────────────────── */
-
-function Tile({ label, big, accent, good }: { label: string; big: string; accent?: boolean; good?: boolean }) {
-  return (
-    <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "12px 14px" }}>
-      <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.5)", letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 500 }}>{label}</div>
-      <div className="mono" style={{ fontSize: 22, fontWeight: 600, letterSpacing: "-0.02em", color: accent ? "var(--orange)" : good ? "var(--green)" : "white", lineHeight: 1.05, marginTop: 4 }}>{big}</div>
-    </div>
-  );
-}
 
 function Label({ name, children, small }: { name: string; children: React.ReactNode; small?: boolean }) {
   return (
@@ -392,11 +490,12 @@ function inputBase(extra: CSSProperties): CSSProperties {
   };
 }
 
-function IconBtn({ children, onClick, title, danger }: { children: React.ReactNode; onClick: () => void; title: string; danger?: boolean }) {
+function IconBtn({ children, onClick, title, danger, disabled }: { children: React.ReactNode; onClick: () => void; title: string; danger?: boolean; disabled?: boolean }) {
   return (
     <button
       onClick={onClick}
       title={title}
+      disabled={disabled}
       style={{
         width: 30,
         height: 30,
@@ -407,6 +506,8 @@ function IconBtn({ children, onClick, title, danger }: { children: React.ReactNo
         fontWeight: 700,
         display: "grid",
         placeItems: "center",
+        opacity: disabled ? 0.3 : 1,
+        cursor: disabled ? "not-allowed" : "pointer",
       }}
     >
       {children}

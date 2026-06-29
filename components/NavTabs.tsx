@@ -2,9 +2,9 @@ import Link from "next/link";
 
 const TABS = [
   { id: "dashboard", label: "Discipline", href: "/" },
+  { id: "goals", label: "Objectifs", href: "/goals" },
   { id: "planche", label: "Planche", href: "/training" },
   { id: "miniature", label: "Miniature", href: "/miniature" },
-  { id: "goals", label: "Objectifs", href: "/goals" },
 ] as const;
 
 export type NavTabId = (typeof TABS)[number]["id"];
