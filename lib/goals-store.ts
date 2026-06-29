@@ -51,9 +51,10 @@ export function totalSaved(s: GoalsState): number {
 
 export interface GoalProgress {
   goal: Goal;
-  saved: number; // € allocated to this goal in the cumulative model
-  remaining: number;
-  pct: number; // 0..1
+  saved: number; // € allocated to this goal's slot
+  remaining: number; // € left in this slot
+  remainingTotal: number; // € left in cagnotte until this goal is fully done (incl. priors)
+  pct: number; // 0..1, slot only
   reached: boolean;
   cumulativeStart: number; // € required to *start* filling this goal
 }
@@ -66,10 +67,12 @@ export function progressOf(s: GoalsState): GoalProgress[] {
     const saved = Math.max(0, Math.min(g.target, total - start));
     acc += g.target;
     const remaining = Math.max(0, g.target - saved);
+    const remainingTotal = Math.max(0, acc - total);
     return {
       goal: g,
       saved,
       remaining,
+      remainingTotal,
       pct: g.target > 0 ? Math.min(1, saved / g.target) : 0,
       reached: saved >= g.target,
       cumulativeStart: start,
@@ -77,18 +80,16 @@ export function progressOf(s: GoalsState): GoalProgress[] {
   });
 }
 
-// Monthly saving rate from net positive deposits in the last 90 days.
+// Monthly saving rate = net mouvements over the last 30 days, no extrapolation.
+// If the user put 10 000 € aside today, the rate is 10 000 €/mois — that's
+// literally what landed in the cagnotte this month. Projecting a half-day
+// of activity onto a full month would lie.
 export function monthlyRate(s: GoalsState): number {
   const now = Date.now();
-  const cutoff = now - 90 * 24 * 60 * 60 * 1000;
+  const cutoff = now - 30 * 24 * 60 * 60 * 1000;
   const recent = s.transactions.filter((t) => new Date(t.date).getTime() >= cutoff);
   const net = recent.reduce((sum, t) => sum + t.amount, 0);
-  if (net <= 0) return 0;
-  // Use the window length we actually observed, capped at 3 months, to avoid
-  // wildly overestimating after a single big deposit on day 1.
-  const first = recent.reduce((min, t) => Math.min(min, new Date(t.date).getTime()), now);
-  const days = Math.max(7, Math.min(90, (now - first) / (24 * 60 * 60 * 1000) + 1));
-  return (net / days) * (365.25 / 12);
+  return Math.max(0, net);
 }
 
 export interface Eta {

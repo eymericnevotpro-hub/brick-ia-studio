@@ -241,9 +241,12 @@ function GoalCard({
   onDelete: () => void;
   onMove: (delta: number) => void;
 }) {
-  const { goal, saved, remaining, pct, reached } = p;
+  const { goal, saved, remaining, remainingTotal, pct, reached } = p;
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const eta = etaFor(remaining, rate);
+  // ETA and "in X months" projections both count what's still missing from
+  // the cagnotte until this goal is fully funded — including everything that
+  // sits above it in priority.
+  const eta = etaFor(remainingTotal, rate);
 
   return (
     <div
@@ -340,7 +343,11 @@ function GoalCard({
           <div style={{ height: "100%", width: `${pct * 100}%`, background: `linear-gradient(90deg, ${goal.color}, var(--orange))`, borderRadius: 999, transition: "width 500ms var(--bounce)" }} />
         </div>
         <div style={{ fontSize: 13, color: reached ? "var(--green)" : "var(--ink-2)", marginTop: 8, fontWeight: 500 }}>
-          {reached ? "🎉 Objectif atteint !" : `Reste ${fmtEur(remaining)} à mettre de côté.`}
+          {reached
+            ? "🎉 Objectif atteint !"
+            : remainingTotal > remaining
+              ? `Reste ${fmtEur(remaining)} dans ce palier · ${fmtEur(remainingTotal)} au total avant de l'avoir.`
+              : `Reste ${fmtEur(remaining)} à mettre de côté.`}
         </div>
       </div>
 
@@ -377,7 +384,7 @@ function GoalCard({
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 6 }}>
             {TIMEFRAMES.map((t) => {
-              const monthly = remaining / t.months;
+              const monthly = remainingTotal / t.months;
               return (
                 <div key={t.label} style={{ background: "var(--bg-2)", borderRadius: 10, padding: "8px 10px" }}>
                   <div style={{ fontSize: 10, color: "var(--ink-3)", letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 600 }}>en {t.label}</div>
