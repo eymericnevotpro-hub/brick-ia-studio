@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { CloudSyncProvider } from "@/components/CloudSyncProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -34,7 +35,7 @@ export default function RootLayout({
       <body>
         <div className="bg-blob a" />
         <div className="bg-blob b" />
-        {children}
+        <CloudSyncProvider>{children}</CloudSyncProvider>
       </body>
     </html>
   );
