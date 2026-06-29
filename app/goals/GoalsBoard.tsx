@@ -3,17 +3,21 @@
 import { CSSProperties, useEffect, useState } from "react";
 import { AnimatedNumber, Btn, Icon, useLS } from "@/components/discipline-ui";
 import {
+  DEFAULT_INVESTMENT,
   DEFAULT_STATE,
   GoalsState,
   Goal,
+  InvestmentSettings,
   QUICK_AMOUNTS,
   TIMEFRAMES,
   Transaction,
   etaFor,
+  etaFromMonths,
   fmtDateShort,
   fmtEur,
   fmtMonths,
   monthlyRate,
+  monthsToReachWithInvestment,
   progressOf,
   todayIso,
   totalSaved,
@@ -32,6 +36,7 @@ export default function GoalsBoard() {
 
 function Inner() {
   const [state, setState] = useLS<GoalsState>("disc.goals.v2", DEFAULT_STATE);
+  const [inv, setInv] = useLS<InvestmentSettings>("disc.goals.investment", DEFAULT_INVESTMENT);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const total = totalSaved(state);
@@ -39,6 +44,16 @@ function Inner() {
   const progresses = progressOf(state);
   const totalTarget = state.goals.reduce((s, g) => s + g.target, 0);
   const totalPct = totalTarget > 0 ? Math.min(1, total / totalTarget) : 0;
+
+  const enableInvestment = () => {
+    setInv((prev) => ({
+      ...prev,
+      enabled: true,
+      // Auto-fill smart defaults the first time we flip the switch.
+      initial: prev.initial > 0 ? prev.initial : total,
+      monthly: prev.monthly > 0 ? prev.monthly : Math.round(rate),
+    }));
+  };
 
   const addTx = (amount: number, note?: string) => {
     if (!amount) return;
@@ -180,6 +195,15 @@ function Inner() {
         )}
       </section>
 
+      {/* INVESTMENT SIMULATION */}
+      <InvestmentCard
+        inv={inv}
+        onChange={(patch) => setInv((prev) => ({ ...prev, ...patch }))}
+        onEnable={enableInvestment}
+        currentTotal={total}
+        currentRate={rate}
+      />
+
       {/* GOALS — filled in priority order */}
       <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(420px, 1fr))", gap: 18 }} className="goals-grid">
         {progresses.length === 0 && (
@@ -194,6 +218,7 @@ function Inner() {
             key={p.goal.id}
             p={p}
             rate={rate}
+            inv={inv}
             index={i}
             isLast={i === progresses.length - 1}
             editing={editingId === p.goal.id}
@@ -212,10 +237,132 @@ function Inner() {
         }
         @media (max-width: 520px) {
           .quick-row { grid-template-columns: repeat(3, 1fr) !important; }
+          .eta-row { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </div>
   );
+}
+
+/* ── investment simulator card ─────────────────────────────────────── */
+
+function InvestmentCard({
+  inv,
+  onChange,
+  onEnable,
+  currentTotal,
+  currentRate,
+}: {
+  inv: InvestmentSettings;
+  onChange: (patch: Partial<InvestmentSettings>) => void;
+  onEnable: () => void;
+  currentTotal: number;
+  currentRate: number;
+}) {
+  return (
+    <section style={{ marginBottom: 18 }}>
+      <div
+        style={{
+          background: "var(--card)",
+          border: "1px solid var(--line)",
+          borderRadius: 24,
+          padding: 22,
+          boxShadow: "var(--shadow-sm)",
+          display: "flex",
+          flexDirection: "column",
+          gap: 14,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ width: 8, height: 8, borderRadius: 4, background: inv.enabled ? "var(--green)" : "var(--ink-3)" }} />
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, letterSpacing: "-0.01em" }}>
+                Simulation placement (bourse, ETF, livret…)
+              </h3>
+              <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--ink-3)", background: "var(--bg-2)", padding: "2px 8px", borderRadius: 999, letterSpacing: "0.06em", textTransform: "uppercase" }}>Optionnel</span>
+            </div>
+            <div style={{ fontSize: 12.5, color: "var(--ink-2)", marginTop: 4 }}>
+              Voir combien de temps il faut avec un capital et un rendement annuel (intérêts composés).
+            </div>
+          </div>
+          <button
+            onClick={() => inv.enabled ? onChange({ enabled: false }) : onEnable()}
+            style={{
+              padding: "8px 14px",
+              borderRadius: 999,
+              background: inv.enabled ? "var(--green)" : "var(--bg-2)",
+              color: inv.enabled ? "white" : "var(--ink-2)",
+              fontWeight: 600,
+              fontSize: 13,
+            }}
+          >
+            {inv.enabled ? "✓ Activé" : "Activer"}
+          </button>
+        </div>
+
+        {inv.enabled && (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10 }}>
+              <Label name="Capital de départ (€)" small>
+                <input
+                  type="number"
+                  value={inv.initial}
+                  onChange={(e) => onChange({ initial: Math.max(0, Number(e.target.value) || 0) })}
+                  style={inputBase({ fontFamily: "Geist Mono, monospace", fontWeight: 700, fontSize: 16, background: "var(--bg-2)" })}
+                />
+              </Label>
+              <Label name="Rendement annuel (%)" small>
+                <input
+                  type="number"
+                  step={0.1}
+                  value={inv.annualRatePct}
+                  onChange={(e) => onChange({ annualRatePct: Math.max(0, Number(e.target.value) || 0) })}
+                  style={inputBase({ fontFamily: "Geist Mono, monospace", fontWeight: 700, fontSize: 16, background: "var(--bg-2)" })}
+                />
+              </Label>
+              <Label name="Versement mensuel (€)" small>
+                <input
+                  type="number"
+                  value={inv.monthly}
+                  onChange={(e) => onChange({ monthly: Math.max(0, Number(e.target.value) || 0) })}
+                  style={inputBase({ fontFamily: "Geist Mono, monospace", fontWeight: 700, fontSize: 16, background: "var(--bg-2)" })}
+                />
+              </Label>
+            </div>
+
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              <button
+                onClick={() => onChange({ initial: Math.round(currentTotal), monthly: Math.round(currentRate) })}
+                style={presetBtn()}
+              >
+                Utiliser ma situation actuelle ({fmtEur(currentTotal)} · {fmtEur(currentRate)}/mois)
+              </button>
+              <button onClick={() => onChange({ annualRatePct: 3 })} style={presetBtn(inv.annualRatePct === 3)}>3% (livret)</button>
+              <button onClick={() => onChange({ annualRatePct: 5 })} style={presetBtn(inv.annualRatePct === 5)}>5% (obligations)</button>
+              <button onClick={() => onChange({ annualRatePct: 7 })} style={presetBtn(inv.annualRatePct === 7)}>7% (ETF World)</button>
+              <button onClick={() => onChange({ annualRatePct: 10 })} style={presetBtn(inv.annualRatePct === 10)}>10% (offensif)</button>
+            </div>
+
+            <div style={{ fontSize: 11.5, color: "var(--ink-3)", lineHeight: 1.55 }}>
+              Le rendement est une <i>hypothèse</i> — un ETF World fait ≈7% par an sur le très long terme, mais peut faire −20% une année et +25% l&apos;année suivante. La simulation ne tient pas compte de l&apos;inflation ni de la fiscalité.
+            </div>
+          </>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function presetBtn(active = false): CSSProperties {
+  return {
+    padding: "6px 12px",
+    borderRadius: 999,
+    background: active ? "var(--orange)" : "var(--bg-2)",
+    color: active ? "white" : "var(--ink-2)",
+    fontSize: 12,
+    fontWeight: 600,
+  };
 }
 
 /* ── goal card ─────────────────────────────────────────────────────── */
@@ -223,6 +370,7 @@ function Inner() {
 function GoalCard({
   p,
   rate,
+  inv,
   index,
   isLast,
   editing,
@@ -233,6 +381,7 @@ function GoalCard({
 }: {
   p: ReturnType<typeof progressOf>[number];
   rate: number;
+  inv: InvestmentSettings;
   index: number;
   isLast: boolean;
   editing: boolean;
@@ -247,6 +396,14 @@ function GoalCard({
   // the cagnotte until this goal is fully funded — including everything that
   // sits above it in priority.
   const eta = etaFor(remainingTotal, rate);
+
+  // Target balance the investment needs to hit (from `inv.initial`) to reach
+  // this goal. Counted from the same priority pile as the linear ETA.
+  const targetForInv = p.cumulativeStart + goal.target;
+  const invMonths = inv.enabled
+    ? monthsToReachWithInvestment(inv.initial, inv.monthly, inv.annualRatePct, targetForInv)
+    : null;
+  const invEta = invMonths != null ? etaFromMonths(invMonths) : null;
 
   return (
     <div
@@ -353,24 +510,51 @@ function GoalCard({
 
       {/* Dynamic ETA from real saving rate */}
       {!reached && (
-        <div style={{ background: rate > 0 ? "var(--orange-50)" : "var(--bg-2)", border: `1px solid ${rate > 0 ? "var(--orange-100)" : "var(--line)"}`, borderRadius: 14, padding: "12px 14px" }}>
-          <div style={{ fontSize: 10.5, color: rate > 0 ? "var(--orange)" : "var(--ink-3)", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 700 }}>
-            À ton rythme actuel
-          </div>
-          {rate <= 0 ? (
-            <div style={{ fontSize: 13, color: "var(--ink-2)", marginTop: 4 }}>
-              Mets quelque chose dans la cagnotte pour estimer un délai.
+        <div style={{ display: "grid", gridTemplateColumns: inv.enabled ? "1fr 1fr" : "1fr", gap: 8 }} className="eta-row">
+          <div style={{ background: rate > 0 ? "var(--orange-50)" : "var(--bg-2)", border: `1px solid ${rate > 0 ? "var(--orange-100)" : "var(--line)"}`, borderRadius: 14, padding: "12px 14px" }}>
+            <div style={{ fontSize: 10.5, color: rate > 0 ? "var(--orange)" : "var(--ink-3)", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 700 }}>
+              Sans placement · cagnotte
             </div>
-          ) : eta == null ? (
-            <div style={{ fontSize: 13, color: "var(--ink-2)", marginTop: 4 }}>—</div>
-          ) : (
-            <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginTop: 2 }}>
-              <div style={{ fontSize: 22, fontWeight: 700, color: "var(--orange)", letterSpacing: "-0.02em" }}>
-                {fmtMonths(eta.months)}
+            {rate <= 0 ? (
+              <div style={{ fontSize: 13, color: "var(--ink-2)", marginTop: 4 }}>
+                Mets quelque chose dans la cagnotte pour estimer un délai.
               </div>
-              <div className="mono" style={{ fontSize: 12.5, color: "var(--ink-2)" }}>
-                ≈ {fmtDateShort(eta.date)} · {fmtEur(rate)}/mois
+            ) : eta == null ? (
+              <div style={{ fontSize: 13, color: "var(--ink-2)", marginTop: 4 }}>—</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 2, marginTop: 2 }}>
+                <div style={{ fontSize: 22, fontWeight: 700, color: "var(--orange)", letterSpacing: "-0.02em" }}>
+                  {fmtMonths(eta.months)}
+                </div>
+                <div className="mono" style={{ fontSize: 12, color: "var(--ink-2)" }}>
+                  ≈ {fmtDateShort(eta.date)} · {fmtEur(rate)}/mois
+                </div>
               </div>
+            )}
+          </div>
+
+          {inv.enabled && (
+            <div style={{ background: "#E6F5EC", border: "1px solid #B7E0C6", borderRadius: 14, padding: "12px 14px" }}>
+              <div style={{ fontSize: 10.5, color: "var(--green)", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 700 }}>
+                Avec placement · {inv.annualRatePct}%/an
+              </div>
+              {invEta == null ? (
+                <div style={{ fontSize: 13, color: "var(--ink-2)", marginTop: 4 }}>Hors d&apos;atteinte avec ces paramètres.</div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 2, marginTop: 2 }}>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: "var(--green)", letterSpacing: "-0.02em" }}>
+                    {fmtMonths(invEta.months)}
+                  </div>
+                  <div className="mono" style={{ fontSize: 12, color: "var(--ink-2)" }}>
+                    ≈ {fmtDateShort(invEta.date)} · {fmtEur(inv.initial)} + {fmtEur(inv.monthly)}/mois
+                  </div>
+                  {eta && invEta.months < eta.months && (
+                    <div style={{ fontSize: 11.5, fontWeight: 600, color: "var(--green)", marginTop: 2 }}>
+                      − {fmtMonths(eta.months - invEta.months)} gagnés grâce au placement
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>

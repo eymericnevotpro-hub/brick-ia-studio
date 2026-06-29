@@ -105,6 +105,63 @@ export function etaFor(remaining: number, rate: number): Eta | null {
   return { months, date: d };
 }
 
+/* ── investment simulation (compound interest) ─────────────────────── */
+
+export interface InvestmentSettings {
+  enabled: boolean;
+  initial: number; // capital de départ placé (€)
+  annualRatePct: number; // rendement annuel attendu, en %
+  monthly: number; // versement mensuel (€)
+}
+
+export const DEFAULT_INVESTMENT: InvestmentSettings = {
+  enabled: false,
+  initial: 0,
+  annualRatePct: 7, // moyenne historique d'un ETF actions mondial long terme
+  monthly: 0,
+};
+
+// Iteratively grow the balance month by month until the target is reached.
+// Returns null if it would take more than maxMonths (default = 50 years).
+export function monthsToReachWithInvestment(
+  initial: number,
+  monthly: number,
+  annualRatePct: number,
+  target: number,
+  maxMonths = 600,
+): number | null {
+  if (initial >= target) return 0;
+  if (monthly <= 0 && annualRatePct <= 0) return null;
+  const r = annualRatePct / 100 / 12; // monthly rate
+  let balance = initial;
+  for (let m = 1; m <= maxMonths; m++) {
+    balance = balance * (1 + r) + monthly;
+    if (balance >= target) return m;
+  }
+  return null;
+}
+
+// Project balance after a given number of months — used for a small "courbe" preview.
+export function balanceAfter(
+  initial: number,
+  monthly: number,
+  annualRatePct: number,
+  months: number,
+): number {
+  const r = annualRatePct / 100 / 12;
+  let balance = initial;
+  for (let m = 0; m < months; m++) {
+    balance = balance * (1 + r) + monthly;
+  }
+  return balance;
+}
+
+export function etaFromMonths(months: number): Eta {
+  const d = new Date();
+  d.setMonth(d.getMonth() + Math.ceil(months));
+  return { months, date: d };
+}
+
 export const fmtEur = (n: number) => Math.round(n).toLocaleString("fr-FR") + " €";
 
 export function todayIso(): string {
