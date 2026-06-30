@@ -2105,9 +2105,11 @@ function DashboardInner() {
         </div>
       </section>
 
-      <footer style={{ maxWidth: 1240, margin: "0 auto", padding: "0 28px 40px", fontSize: 12, color: "var(--ink-3)", display: "flex", alignItems: "center", gap: 6 }}>
+      <footer style={{ maxWidth: 1240, margin: "0 auto", padding: "0 28px 40px", fontSize: 12, color: "var(--ink-3)", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
         <Icon name="dot" size={10} color="var(--orange)" />
-        Tout est enregistré localement sur ton appareil. Reviens chaque jour.
+        <span>Tout est enregistré localement sur ton appareil. Reviens chaque jour.</span>
+        <span style={{ color: "var(--ink-3)" }}>·</span>
+        <a href="/install" style={{ color: "var(--orange)", textDecoration: "none", fontWeight: 600 }}>Sync &amp; backup</a>
       </footer>
 
       <ScheduleEditor open={editorOpen} onClose={() => setEditorOpen(false)} habits={habits} setHabits={setHabits} />

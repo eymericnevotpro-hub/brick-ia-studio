@@ -5,12 +5,13 @@ const TABS = [
   { id: "goals", label: "Objectifs", href: "/goals" },
   { id: "planche", label: "Planche", href: "/training" },
   { id: "miniature", label: "Miniature", href: "/miniature" },
-  { id: "install", label: "📱 Installer", href: "/install" },
 ] as const;
 
 export type NavTabId = (typeof TABS)[number]["id"];
 
-export default function NavTabs({ current }: { current: NavTabId }) {
+// `current` is loose on purpose so pages that aren't a tab (like /install) can
+// still render the nav without trying to look "active".
+export default function NavTabs({ current }: { current?: NavTabId | string }) {
   return (
     <nav style={{ display: "flex", justifyContent: "center", padding: "18px 28px 0" }}>
       <div style={{ display: "inline-flex", gap: 4, background: "var(--bg-2)", padding: 4, borderRadius: 999, border: "1px solid var(--line)" }}>

@@ -321,7 +321,7 @@ export function InstallPrompt() {
           <Icon name="flame" size={20} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 600 }}>Installe Discipline sur ton téléphone</div>
+          <div style={{ fontSize: 14, fontWeight: 600 }}>Installe Bproductive sur ton téléphone</div>
           <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>
             Icône sur l&apos;écran d&apos;accueil + rappels sur l&apos;écran verrouillé.
           </div>

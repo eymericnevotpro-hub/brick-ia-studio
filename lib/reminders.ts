@@ -142,7 +142,7 @@ export async function syncReminders(
     if (useTriggers && TimestampTrigger) {
       options.showTrigger = new TimestampTrigger(ts);
       try {
-        await reg.showNotification("Discipline", options);
+        await reg.showNotification("Bproductive", options);
       } catch {
         /* ignore a single failed schedule */
       }
@@ -151,7 +151,7 @@ export async function syncReminders(
       const delay = ts - Date.now();
       if (delay >= 0 && delay <= 12 * 60 * 60 * 1000) {
         const id = window.setTimeout(() => {
-          reg.showNotification("Discipline", options).catch(() => {});
+          reg.showNotification("Bproductive", options).catch(() => {});
         }, delay);
         fallbackTimers.push(id);
       }
@@ -172,7 +172,7 @@ export async function sendTestReminder(): Promise<boolean> {
       tag: TAG_PREFIX + "test",
       data: { url: "/" },
     };
-    await reg.showNotification("Discipline · test", options);
+    await reg.showNotification("Bproductive · test", options);
     return true;
   } catch {
     return false;

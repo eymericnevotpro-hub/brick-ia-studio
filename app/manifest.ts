@@ -1,14 +1,14 @@
 import type { MetadataRoute } from "next";
 
-// Web App Manifest — makes "Discipline" installable on the Android home screen
+// Web App Manifest — makes "Bproductive" installable on the Android home screen
 // as a standalone app, and consumable by PWABuilder / Bubblewrap to wrap into
 // a real .apk / .aab for Play Store.
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Discipline — Objectifs & habitudes",
-    short_name: "Discipline",
+    name: "Bproductive — Objectifs & habitudes",
+    short_name: "Bproductive",
     description:
-      "Discipline, objectifs financiers, programme planche et générateur de miniature 9:16 — tout en local sur ton appareil.",
+      "Bproductive : discipline, objectifs financiers, programme planche et générateur de miniature 9:16 — tout en local sur ton appareil.",
     id: "/",
     start_url: "/",
     scope: "/",

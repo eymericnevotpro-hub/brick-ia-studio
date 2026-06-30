@@ -3,7 +3,7 @@ import InstallApp from "./InstallApp";
 
 export const metadata = {
   title: "Installer — App Android",
-  description: "Installe Discipline sur ton téléphone (PWA ou APK Android).",
+  description: "Installe Bproductive sur ton téléphone (PWA ou APK Android).",
 };
 
 export default function InstallPage() {

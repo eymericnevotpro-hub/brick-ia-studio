@@ -63,7 +63,7 @@ export default function InstallApp() {
         </div>
         <h2 style={{ margin: "6px 0 0", fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em" }}>Sur ton écran d&apos;accueil</h2>
         <p style={{ fontSize: 13.5, color: "var(--ink-2)", lineHeight: 1.55, marginTop: 6 }}>
-          Discipline est une PWA — ton téléphone peut l&apos;installer comme une vraie app.
+          Bproductive est une PWA — ton téléphone peut l&apos;installer comme une vraie app.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 12 }}>
           {canInstallPwa ? (

@@ -3,14 +3,14 @@ import { CloudSyncProvider } from "@/components/CloudSyncProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Discipline — Emploi du temps",
+  title: "Bproductive — Objectifs & habitudes",
   description:
-    "Ton emploi du temps anti-procrastination : rituels avec XP, série de jours et rappels sur l'écran verrouillé pour tenir ta discipline.",
-  applicationName: "Discipline",
+    "Bproductive : discipline, objectifs financiers, programme planche et générateur de miniature 9:16 — tout en local sur ton appareil.",
+  applicationName: "Bproductive",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Discipline",
+    title: "Bproductive",
   },
   icons: {
     icon: "/icon-192.png",
