@@ -29,6 +29,28 @@ export function useLS<T>(key: string, initial: T | (() => T)): [T, (v: T | ((p: 
       /* storage full / unavailable — keep working in memory */
     }
   }, [key, v]);
+
+  // Re-read when something else writes to our key — cloud sync pull, manual
+  // import, another tab… So the UI shows the freshest value without a refresh.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onChange = (e: Event) => {
+      const ce = e as CustomEvent<{ key?: string }>;
+      const changedKey = ce.detail?.key;
+      if (changedKey && changedKey !== key) return;
+      try {
+        const raw = window.localStorage.getItem(key);
+        if (raw == null) return;
+        const next = JSON.parse(raw) as T;
+        setV((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
+      } catch {
+        /* ignore malformed values */
+      }
+    };
+    window.addEventListener("disc:change", onChange as EventListener);
+    return () => window.removeEventListener("disc:change", onChange as EventListener);
+  }, [key]);
+
   return [v, setV];
 }
 

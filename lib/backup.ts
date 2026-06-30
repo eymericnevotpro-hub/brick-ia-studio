@@ -90,8 +90,10 @@ export async function readBackupFile(file: File): Promise<unknown> {
 }
 
 // Patch localStorage so any setItem on a "disc.*" key emits a "disc:change"
-// event in the current window. Used by the cloud-sync hook to push debounced
-// updates without sprinkling sync calls through every component.
+// event in the current window — with the key in `detail.key`. Two consumers
+// listen to it : the cloud-sync hook pushes debounced updates, and useLS
+// re-reads its own value when somebody else writes to the same key (e.g.
+// the cloud pull replacing the snapshot).
 let patched = false;
 export function installLocalStorageWatcher() {
   if (typeof window === "undefined" || patched) return;
@@ -99,16 +101,19 @@ export function installLocalStorageWatcher() {
   const origSet = window.localStorage.setItem.bind(window.localStorage);
   const origRemove = window.localStorage.removeItem.bind(window.localStorage);
   const origClear = window.localStorage.clear.bind(window.localStorage);
+  const emit = (key?: string) => {
+    window.dispatchEvent(new CustomEvent("disc:change", { detail: { key } }));
+  };
   window.localStorage.setItem = (k: string, v: string) => {
     origSet(k, v);
-    if (k.startsWith(BACKUP_PREFIX)) window.dispatchEvent(new Event("disc:change"));
+    if (k.startsWith(BACKUP_PREFIX)) emit(k);
   };
   window.localStorage.removeItem = (k: string) => {
     origRemove(k);
-    if (k.startsWith(BACKUP_PREFIX)) window.dispatchEvent(new Event("disc:change"));
+    if (k.startsWith(BACKUP_PREFIX)) emit(k);
   };
   window.localStorage.clear = () => {
     origClear();
-    window.dispatchEvent(new Event("disc:change"));
+    emit();
   };
 }
