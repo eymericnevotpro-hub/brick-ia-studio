@@ -53,11 +53,13 @@ function RevenueRing({
   goal,
   breakdown,
   modeLabel,
+  monthDate,
 }: {
   total: number;
   goal: number;
   breakdown: Breakdown[];
   modeLabel: string;
+  monthDate?: Date;
 }) {
   const size = 380;
   const stroke = 26;
@@ -123,7 +125,7 @@ function RevenueRing({
           {modeLabel || "Total"}
         </div>
         <div style={{ fontSize: 11, color: "var(--ink-3)", letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 500, marginTop: -2 }}>
-          {monthLabel()}
+          {monthLabel(monthDate)}
         </div>
         <div style={{ fontSize: 60, fontWeight: 600, letterSpacing: "-0.04em", lineHeight: 1, fontFamily: "Geist", display: "flex", alignItems: "baseline" }}>
           <AnimatedNumber value={tweenedTotal} />
@@ -1814,7 +1816,15 @@ export default function DisciplineDashboard() {
 }
 
 function DashboardInner() {
-  const mk = monthKey();
+  // Date currently being viewed (revenue panels follow it). Defaults to today.
+  const [viewMonth, setViewMonth] = useState<Date>(() => new Date());
+  const mk = monthKey(viewMonth);
+  const realMk = monthKey();
+  const isCurrentMonth = mk === realMk;
+  const navMonth = (delta: number) => {
+    setViewMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
+  };
+  const goToCurrent = () => setViewMonth(new Date());
 
   const [prices, setPrices] = useLS<Prices>("disc.prices.v2", DEFAULT_PRICES);
   const [members, setMembers] = useLS<number>("disc.members", DEFAULT_MEMBERS);
@@ -1888,7 +1898,7 @@ function DashboardInner() {
         <InstallPrompt />
       </div>
 
-      <header style={{ maxWidth: 1240, margin: "0 auto", padding: "24px 28px 8px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+      <header style={{ maxWidth: 1240, margin: "0 auto", padding: "24px 28px 8px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ width: 40, height: 40, borderRadius: 12, background: "var(--ink)", color: "var(--orange)", display: "grid", placeItems: "center", boxShadow: "var(--shadow-md)" }}>
             <Icon name="flame" size={22} />
@@ -1898,6 +1908,30 @@ function DashboardInner() {
             <div style={{ fontSize: 12, color: "var(--ink-2)" }}>Vers 10 000 € {goalMode === "net" ? "net" : "brut"} / mois</div>
           </div>
         </div>
+
+        {/* Month navigator */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--bg-2)", padding: "4px 6px", borderRadius: 999 }}>
+          <button
+            onClick={() => navMonth(-1)}
+            title="Mois précédent"
+            style={monthNavBtn()}
+          >‹</button>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 130, padding: "2px 6px" }}>
+            <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em", color: "var(--ink)", textTransform: "capitalize" }}>{monthLabel(viewMonth)}</span>
+            {!isCurrentMonth && (
+              <button onClick={goToCurrent} style={{ fontSize: 10.5, color: "var(--orange)", fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                ← Aujourd&apos;hui
+              </button>
+            )}
+          </div>
+          <button
+            onClick={() => navMonth(1)}
+            title="Mois suivant"
+            disabled={isCurrentMonth}
+            style={monthNavBtn(isCurrentMonth)}
+          >›</button>
+        </div>
+
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ display: "flex", gap: 4, background: "var(--bg-2)", padding: 4, borderRadius: 999 }}>
             {[
@@ -1933,7 +1967,7 @@ function DashboardInner() {
         style={{ maxWidth: 1240, margin: "0 auto", padding: "16px 28px 28px", display: "grid", gridTemplateColumns: "minmax(380px, 460px) 1fr", gap: 36, alignItems: "center" }}
       >
         <div style={{ display: "grid", placeItems: "center" }}>
-          <RevenueRing total={displayTotal} goal={GOAL} breakdown={breakdown} modeLabel={modeLabel} />
+          <RevenueRing total={displayTotal} goal={GOAL} breakdown={breakdown} modeLabel={modeLabel} monthDate={viewMonth} />
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 18, paddingLeft: 8 }}>
           <div>
@@ -2104,4 +2138,22 @@ function DashboardInner() {
       `}</style>
     </div>
   );
+}
+
+function monthNavBtn(disabled = false): React.CSSProperties {
+  return {
+    width: 28,
+    height: 28,
+    borderRadius: "50%",
+    background: "white",
+    border: "1px solid var(--line)",
+    color: "var(--ink-2)",
+    fontSize: 18,
+    fontWeight: 700,
+    lineHeight: 1,
+    display: "grid",
+    placeItems: "center",
+    opacity: disabled ? 0.35 : 1,
+    cursor: disabled ? "not-allowed" : "pointer",
+  };
 }
