@@ -9,6 +9,8 @@ import {
   Goal,
   InvestmentSettings,
   QUICK_AMOUNTS,
+  SIDEQUEST_QUICK,
+  Sidequest,
   TIMEFRAMES,
   Transaction,
   etaFor,
@@ -19,6 +21,7 @@ import {
   monthlyRate,
   monthsToReachWithInvestment,
   progressOf,
+  sidequestProgress,
   todayIso,
   totalSaved,
   uid,
@@ -86,6 +89,28 @@ function Inner() {
       next.splice(target, 0, removed);
       return { ...prev, goals: next };
     });
+  };
+
+  // ── sidequests ──
+  const sidequests = state.sidequests ?? [];
+  const addSidequest = (emoji: string, name: string, target: number) => {
+    if (target <= 0) return;
+    const sq: Sidequest = { id: uid(), emoji, name: name.trim() || "Sidequest", target, baseline: total, createdAt: todayIso() };
+    setState((prev) => ({ ...prev, sidequests: [...(prev.sidequests ?? []), sq] }));
+  };
+  const updateSidequest = (id: string, patch: Partial<Sidequest>) => {
+    setState((prev) => ({ ...prev, sidequests: (prev.sidequests ?? []).map((s) => (s.id === id ? { ...s, ...patch } : s)) }));
+  };
+  const removeSidequest = (id: string) => {
+    setState((prev) => ({ ...prev, sidequests: (prev.sidequests ?? []).filter((s) => s.id !== id) }));
+  };
+  const claimSidequest = (sq: Sidequest) => {
+    // A sidequest is a challenge, not a purchase: marking it done does NOT
+    // touch the cagnotte. It just records the achievement.
+    setState((prev) => ({
+      ...prev,
+      sidequests: (prev.sidequests ?? []).map((s) => (s.id === sq.id ? { ...s, claimed: true, claimedAt: todayIso() } : s)),
+    }));
   };
 
   const recent = [...state.transactions].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 8);
@@ -194,6 +219,17 @@ function Inner() {
           </details>
         )}
       </section>
+
+      {/* SIDEQUESTS */}
+      <SidequestsSection
+        sidequests={sidequests}
+        total={total}
+        rate={rate}
+        onAdd={addSidequest}
+        onUpdate={updateSidequest}
+        onRemove={removeSidequest}
+        onClaim={claimSidequest}
+      />
 
       {/* INVESTMENT SIMULATION */}
       <InvestmentCard
@@ -703,5 +739,244 @@ function IconBtn({ children, onClick, title, danger, disabled }: { children: Rea
     >
       {children}
     </button>
+  );
+}
+
+/* ── sidequests section ───────────────────────────────────────────── */
+
+function SidequestsSection({
+  sidequests,
+  total,
+  rate,
+  onAdd,
+  onUpdate,
+  onRemove,
+  onClaim,
+}: {
+  sidequests: Sidequest[];
+  total: number;
+  rate: number;
+  onAdd: (emoji: string, name: string, target: number) => void;
+  onUpdate: (id: string, patch: Partial<Sidequest>) => void;
+  onRemove: (id: string) => void;
+  onClaim: (sq: Sidequest) => void;
+}) {
+  const [emoji, setEmoji] = useState("🪑");
+  const [name, setName] = useState("");
+  const [target, setTarget] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const submit = () => {
+    const v = Number(String(target).replace(",", "."));
+    if (!Number.isFinite(v) || v <= 0) return;
+    onAdd(emoji || "🎯", name, v);
+    setName("");
+    setTarget("");
+    setEmoji("🪑");
+  };
+
+  const active = sidequests.filter((s) => !s.claimed);
+  const done = sidequests.filter((s) => s.claimed);
+
+  return (
+    <section style={{ marginBottom: 18 }}>
+      <div style={{ background: "var(--card)", border: "1px solid var(--line)", borderRadius: 24, padding: 22, display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 18 }}>🗺️</span>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, letterSpacing: "-0.01em" }}>Sidequests</h3>
+              <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--ink-3)", background: "var(--bg-2)", padding: "2px 8px", borderRadius: 999, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                récompenses rapides
+              </span>
+            </div>
+            <div style={{ fontSize: 12.5, color: "var(--ink-2)", marginTop: 4, maxWidth: 640, lineHeight: 1.5 }}>
+              Des défis à côté de tes gros rêves. Une sidequest est relevée quand ta cagnotte a grimpé de son montant <b>en plus</b> depuis sa création. C&apos;est un objectif à atteindre — la cagnotte n&apos;est pas touchée.
+            </div>
+          </div>
+        </div>
+
+        {/* Quick presets */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {SIDEQUEST_QUICK.map((q) => (
+            <button
+              key={q.name}
+              onClick={() => onAdd(q.emoji, q.name, q.target)}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 999, background: "var(--bg-2)", color: "var(--ink)", fontSize: 12.5, fontWeight: 600, border: "1px solid transparent" }}
+            >
+              <span>{q.emoji}</span> {q.name} · {fmtEur(q.target)}
+            </button>
+          ))}
+        </div>
+
+        {/* Custom add */}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", background: "var(--bg-2)", borderRadius: 14, padding: 12 }}>
+          <input
+            value={emoji}
+            onChange={(e) => setEmoji(e.target.value.slice(0, 4) || "🎯")}
+            style={{ width: 56, textAlign: "center", fontSize: 20, padding: "8px 6px", background: "white", border: "1px solid transparent", borderRadius: 10, outline: "none" }}
+          />
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && submit()}
+            placeholder="Nom de la sidequest (ex : bureau minimaliste)"
+            style={{ flex: "1 1 200px", minWidth: 0, padding: "10px 12px", background: "white", border: "1px solid transparent", borderRadius: 10, outline: "none", fontSize: 14, color: "var(--ink)" }}
+          />
+          <div style={{ display: "flex", alignItems: "center", background: "white", borderRadius: 10, padding: "8px 12px", width: 130 }}>
+            <input
+              type="number"
+              value={target}
+              onChange={(e) => setTarget(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && submit()}
+              placeholder="8000"
+              style={{ flex: 1, width: "100%", background: "transparent", border: "none", outline: "none", fontSize: 15, fontFamily: "Geist Mono, monospace", fontWeight: 700, color: "var(--ink)" }}
+            />
+            <span style={{ fontSize: 13, color: "var(--ink-2)" }}>€</span>
+          </div>
+          <Btn kind="primary" size="sm" icon="plus" onClick={submit}>Ajouter</Btn>
+        </div>
+
+        {/* Active sidequests */}
+        {active.length > 0 && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 12 }} className="sq-grid">
+            {active.map((sq) => (
+              <SidequestCard
+                key={sq.id}
+                sq={sq}
+                total={total}
+                rate={rate}
+                editing={editingId === sq.id}
+                onEdit={() => setEditingId(editingId === sq.id ? null : sq.id)}
+                onUpdate={(patch) => onUpdate(sq.id, patch)}
+                onRemove={() => onRemove(sq.id)}
+                onClaim={() => onClaim(sq)}
+              />
+            ))}
+          </div>
+        )}
+
+        {active.length === 0 && (
+          <div style={{ fontSize: 13, color: "var(--ink-3)", textAlign: "center", padding: "8px 0" }}>
+            Aucune sidequest en cours — ajoute-en une ci-dessus.
+          </div>
+        )}
+
+        {/* Claimed sidequests (trophies) */}
+        {done.length > 0 && (
+          <details>
+            <summary style={{ cursor: "pointer", fontSize: 12.5, color: "var(--ink-2)", fontWeight: 600 }}>
+              🏆 Offertes ({done.length})
+            </summary>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+              {done.map((sq) => (
+                <div key={sq.id} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "8px 12px", background: "#E6F5EC", border: "1px solid #B7E0C6", borderRadius: 12 }}>
+                  <span style={{ fontSize: 18 }}>{sq.emoji}</span>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>{sq.name}</div>
+                    <div style={{ fontSize: 11, color: "var(--ink-3)" }}>
+                      {fmtEur(sq.target)}{sq.claimedAt ? ` · ${new Date(sq.claimedAt).toLocaleDateString("fr-FR")}` : ""}
+                    </div>
+                  </div>
+                  <button onClick={() => onRemove(sq.id)} title="Retirer de la liste" style={{ fontSize: 11, color: "var(--ink-3)", padding: "4px 6px" }}>✕</button>
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
+      </div>
+
+      <style>{`
+        @media (max-width: 520px) { .sq-grid { grid-template-columns: 1fr !important; } }
+      `}</style>
+    </section>
+  );
+}
+
+function SidequestCard({
+  sq,
+  total,
+  rate,
+  editing,
+  onEdit,
+  onUpdate,
+  onRemove,
+  onClaim,
+}: {
+  sq: Sidequest;
+  total: number;
+  rate: number;
+  editing: boolean;
+  onEdit: () => void;
+  onUpdate: (patch: Partial<Sidequest>) => void;
+  onRemove: () => void;
+  onClaim: () => void;
+}) {
+  const { saved, remaining, pct, reached } = sidequestProgress(sq, total);
+  const eta = etaFor(remaining, rate);
+
+  return (
+    <div style={{ background: "var(--bg-2)", border: `1.5px solid ${reached ? "var(--green)" : "var(--line)"}`, borderRadius: 16, padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+          <span style={{ fontSize: 26, lineHeight: 1 }}>{sq.emoji}</span>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.01em", lineHeight: 1.2 }}>{sq.name}</div>
+            <div style={{ fontSize: 11.5, color: "var(--ink-3)", marginTop: 1 }}>{fmtEur(sq.target)} en plus</div>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 4 }}>
+          <IconBtn title="Modifier" onClick={onEdit}>✎</IconBtn>
+          <IconBtn title="Supprimer" onClick={onRemove} danger>✕</IconBtn>
+        </div>
+      </div>
+
+      {editing && (
+        <div style={{ display: "grid", gridTemplateColumns: "auto 1fr 1fr", gap: 8, alignItems: "end" }}>
+          <input
+            value={sq.emoji}
+            onChange={(e) => onUpdate({ emoji: e.target.value.slice(0, 4) || "🎯" })}
+            style={{ width: 54, textAlign: "center", fontSize: 18, padding: "6px", background: "white", border: "1px solid transparent", borderRadius: 8, outline: "none" }}
+          />
+          <input
+            value={sq.name}
+            onChange={(e) => onUpdate({ name: e.target.value })}
+            style={{ ...inputBase({ fontSize: 13 }) }}
+          />
+          <input
+            type="number"
+            value={sq.target}
+            onChange={(e) => onUpdate({ target: Math.max(0, Number(e.target.value) || 0) })}
+            style={{ ...inputBase({ fontSize: 13, fontFamily: "Geist Mono, monospace", fontWeight: 700 }) }}
+          />
+        </div>
+      )}
+
+      <div>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
+          <span className="mono" style={{ fontSize: 18, fontWeight: 700, color: "var(--ink)" }}>{fmtEur(saved)}</span>
+          <span className="mono" style={{ fontSize: 12, color: "var(--ink-2)" }}>/ {fmtEur(sq.target)} ({Math.round(pct * 100)}%)</span>
+        </div>
+        <div style={{ height: 10, background: "white", borderRadius: 999, marginTop: 6, overflow: "hidden" }}>
+          <div style={{ height: "100%", width: `${pct * 100}%`, background: reached ? "var(--green)" : "linear-gradient(90deg, var(--orange-soft), var(--orange))", borderRadius: 999, transition: "width 500ms var(--bounce)" }} />
+        </div>
+      </div>
+
+      {reached ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ fontSize: 12.5, color: "var(--green)", fontWeight: 600 }}>🎉 Défi relevé ! Tu as mis les {fmtEur(sq.target)} de côté.</div>
+          <button
+            onClick={onClaim}
+            style={{ padding: "9px 14px", borderRadius: 999, background: "var(--green)", color: "white", fontWeight: 700, fontSize: 13 }}
+          >
+            Marquer comme accompli 🏆
+          </button>
+        </div>
+      ) : (
+        <div style={{ fontSize: 12, color: "var(--ink-2)" }}>
+          Reste {fmtEur(remaining)}{eta ? ` · à ton rythme, ${fmtMonths(eta.months)}` : ""}
+        </div>
+      )}
+    </div>
   );
 }

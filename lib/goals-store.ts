@@ -17,9 +17,26 @@ export interface Goal {
   color: string;
 }
 
+// A sidequest is a lighter, faster CHALLENGE alongside the big goals. It is
+// tracked as "how much more have I saved since I set it": at creation it
+// snapshots the current cagnotte total as `baseline`, then its progress is
+// (currentTotal - baseline), capped at target. Claiming it is purely a
+// trophy — the cagnotte is NOT touched (the real purchase is separate money).
+export interface Sidequest {
+  id: string;
+  emoji: string;
+  name: string;
+  target: number; // € to set aside on top of the baseline
+  baseline: number; // cagnotte total at creation
+  createdAt: string; // YYYY-MM-DD
+  claimed?: boolean;
+  claimedAt?: string; // YYYY-MM-DD
+}
+
 export interface GoalsState {
   transactions: Transaction[];
   goals: Goal[]; // ordered by priority (first = filled first)
+  sidequests?: Sidequest[];
 }
 
 export const DEFAULT_STATE: GoalsState = {
@@ -28,6 +45,7 @@ export const DEFAULT_STATE: GoalsState = {
     { id: "car", emoji: "🚗", name: "Voiture de rêve", target: 40000, color: "#FF6A1A" },
     { id: "house", emoji: "🏡", name: "Maison de rêve avec mon amoureuse", target: 250000, color: "#1A1208" },
   ],
+  sidequests: [],
 };
 
 export interface Timeframe {
@@ -187,3 +205,31 @@ export function fmtMonths(months: number): string {
 export function fmtDateShort(d: Date): string {
   return d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
 }
+
+/* ── sidequests ─────────────────────────────────────────────────────── */
+
+export interface SidequestProgress {
+  saved: number; // € set aside since the baseline
+  remaining: number;
+  pct: number; // 0..1
+  reached: boolean;
+}
+
+// Progress of a sidequest against the *current* cagnotte total.
+export function sidequestProgress(sq: Sidequest, total: number): SidequestProgress {
+  const saved = Math.max(0, Math.min(sq.target, total - sq.baseline));
+  const remaining = Math.max(0, sq.target - saved);
+  return {
+    saved,
+    remaining,
+    pct: sq.target > 0 ? Math.min(1, saved / sq.target) : 0,
+    reached: saved >= sq.target,
+  };
+}
+
+export const SIDEQUEST_QUICK: { emoji: string; name: string; target: number }[] = [
+  { emoji: "🪑", name: "Bureau minimaliste", target: 8000 },
+  { emoji: "💻", name: "Nouveau setup", target: 3000 },
+  { emoji: "✈️", name: "Voyage", target: 2500 },
+  { emoji: "⌚", name: "Montre", target: 1500 },
+];
