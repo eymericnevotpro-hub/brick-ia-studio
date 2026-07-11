@@ -1220,7 +1220,49 @@ function ChargesStrip({
       {fixedEur > 0 && <ChargeSep>−</ChargeSep>}
       {fixedEur > 0 && <ChargeCell label="Frais fixes" value={fixedEur} color="var(--ink-2)" small />}
       <ChargeSep>=</ChargeSep>
-      <ChargeCell label="Net en poche" value={Math.max(0, netEur)} color="var(--orange)" />
+      <ChargeCell label="Net en poche" value={netEur} color={netEur < 0 ? "#C44A00" : "var(--orange)"} />
+    </div>
+  );
+}
+
+function PartnerChargesStrip({
+  caBrut,
+  urssafEur,
+  impotEur,
+  urssafPct,
+  impotPct,
+  netEur,
+}: {
+  caBrut: number;
+  urssafEur: number;
+  impotEur: number;
+  urssafPct: number;
+  impotPct: number;
+  netEur: number;
+}) {
+  return (
+    <div
+      className="charges"
+      style={{
+        background: "var(--card)",
+        border: "1px solid var(--line)",
+        borderRadius: 18,
+        padding: "14px 18px",
+        display: "grid",
+        gridTemplateColumns: "1fr auto 1fr auto 1fr auto 1fr",
+        alignItems: "center",
+        gap: 12,
+        boxShadow: "var(--shadow-sm)",
+        animation: "fade-up 600ms var(--ease-out) 260ms backwards",
+      }}
+    >
+      <ChargeCell label="Suzy · brut" value={caBrut} color="var(--ink)" />
+      <ChargeSep>−</ChargeSep>
+      <ChargeCell label={`URSSAF · ${urssafPct}%`} value={urssafEur} color="var(--ink-2)" small />
+      <ChargeSep>−</ChargeSep>
+      <ChargeCell label={`Impôt · ${impotPct}%`} value={impotEur} color="var(--ink-2)" small />
+      <ChargeSep>=</ChargeSep>
+      <ChargeCell label="Net Suzy" value={netEur} color={PARTNER_COLOR} />
     </div>
   );
 }
@@ -1543,6 +1585,16 @@ function DashboardInner() {
             fixedEur={fixedExpensesEur}
             netEur={netEur}
           />
+          {partnerRaw > 0 && (
+            <PartnerChargesStrip
+              caBrut={partnerRaw}
+              urssafEur={partnerRaw * (partnerFiscal.urssaf / 100)}
+              impotEur={partnerRaw * (partnerFiscal.impot / 100)}
+              urssafPct={partnerFiscal.urssaf}
+              impotPct={partnerFiscal.impot}
+              netEur={partnerRaw * partnerNetRatio}
+            />
+          )}
         </div>
       </section>
 
