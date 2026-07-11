@@ -108,6 +108,8 @@ export const DEFAULT_PRICES: Prices = {
 };
 
 export const DEFAULT_FISCAL: Fiscal = { urssaf: 24, impot: 2.2 };
+// Suzy's rates — her income is entered gross; in net mode we deduct these.
+export const DEFAULT_PARTNER_FISCAL: Fiscal = { urssaf: 10, impot: 2.2 };
 export const DEFAULT_MEMBERS = 24;
 
 export function emptyCounters(): MonthCounters {

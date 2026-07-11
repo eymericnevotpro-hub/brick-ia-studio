@@ -19,6 +19,7 @@ import {
 import {
   DEFAULT_FISCAL,
   DEFAULT_MEMBERS,
+  DEFAULT_PARTNER_FISCAL,
   DEFAULT_PARTNER_LABELS,
   DEFAULT_PRICES,
   Fiscal,
@@ -989,6 +990,8 @@ function Settings({
   setGoalEur,
   fixedExpenses,
   setFixedExpenses,
+  partnerFiscal,
+  setPartnerFiscal,
 }: {
   open: boolean;
   onClose: () => void;
@@ -1004,6 +1007,8 @@ function Settings({
   setGoalEur: (v: number) => void;
   fixedExpenses: FixedExpense[];
   setFixedExpenses: (v: FixedExpense[] | ((p: FixedExpense[]) => FixedExpense[])) => void;
+  partnerFiscal: Fiscal;
+  setPartnerFiscal: (v: Fiscal | ((p: Fiscal) => Fiscal)) => void;
 }) {
   if (!open) return null;
   return (
@@ -1132,6 +1137,16 @@ function Settings({
           <Field label="Impôt libératoire" value={fiscal.impot} onChange={(v) => setFiscal((f) => ({ ...f, impot: v }))} step={0.1} suffix="%" />
         </div>
         <div style={{ fontSize: 11.5, color: "var(--ink-3)", marginTop: 10, lineHeight: 1.5 }}>Calculés sur le chiffre d&apos;affaires brut (avant coût plateforme).</div>
+
+        <div style={{ height: 18 }} />
+        <SectionLabel>Suzy — charges</SectionLabel>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <Field label="Cotisations sociales (URSSAF)" value={partnerFiscal.urssaf} onChange={(v) => setPartnerFiscal((f) => ({ ...f, urssaf: v }))} step={0.1} suffix="%" />
+          <Field label="Impôt" value={partnerFiscal.impot} onChange={(v) => setPartnerFiscal((f) => ({ ...f, impot: v }))} step={0.1} suffix="%" />
+        </div>
+        <div style={{ fontSize: 11.5, color: "var(--ink-3)", marginTop: 10, lineHeight: 1.5 }}>
+          Les revenus de Suzy sont saisis en brut. En mode « Net », on déduit ces {(partnerFiscal.urssaf + partnerFiscal.impot).toFixed(1)}%.
+        </div>
       </div>
     </div>
   );
@@ -1347,6 +1362,7 @@ function DashboardInner() {
   const [fixedExpenses, setFixedExpenses] = useLS<FixedExpense[]>("disc.fixedExpenses", []);
   // Partner income line labels + which revenues the ring shows.
   const [partnerLabels, setPartnerLabels] = useLS<string[]>("disc.partnerLabels", DEFAULT_PARTNER_LABELS);
+  const [partnerFiscal, setPartnerFiscal] = useLS<Fiscal>("disc.partnerFiscal", DEFAULT_PARTNER_FISCAL);
   const [revenueView, setRevenueView] = useLS<RevenueView>("disc.revenueView", "both");
 
   const [counters, setCounters] = useLS<Record<string, MonthCounters>>("disc.counters", {});
@@ -1371,7 +1387,10 @@ function DashboardInner() {
   const { skoolGrossUsd, skoolGrossEur, skoolPlatformEur, fixedExpensesEur, brandGrossEur, servicesEur, caBrut, urssafEur, impotEur, netEur } = fin;
 
   const myTotal = goalMode === "net" ? Math.max(0, netEur) : caBrut;
-  const partnerTotal = partnerVals.reduce((s, v) => s + (v || 0), 0);
+  // Suzy's income is entered gross; in net mode we deduct her URSSAF + impôt.
+  const partnerRaw = partnerVals.reduce((s, v) => s + (v || 0), 0);
+  const partnerNetRatio = 1 - (partnerFiscal.urssaf + partnerFiscal.impot) / 100;
+  const partnerTotal = goalMode === "net" ? partnerRaw * partnerNetRatio : partnerRaw;
   // The figure the hero / need-tiles follow depends on the ring's view.
   const displayTotal = revenueView === "both" ? myTotal + partnerTotal : revenueView === "me" ? myTotal : partnerTotal;
 
@@ -1622,6 +1641,8 @@ function DashboardInner() {
         setGoalEur={setGoalEur}
         fixedExpenses={fixedExpenses}
         setFixedExpenses={setFixedExpenses}
+        partnerFiscal={partnerFiscal}
+        setPartnerFiscal={setPartnerFiscal}
       />
 
       <style>{`
