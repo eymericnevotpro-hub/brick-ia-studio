@@ -113,8 +113,10 @@ export default function InstallApp() {
 /* ────────────────────────────────────────────────────────────────────── */
 
 function CloudSyncCard() {
-  const { configured, session, status, lastSync, error, pendingChanges, pull, push, signIn, signOut } = useCloudSyncCtx();
+  const { configured, session, status, lastSync, error, pendingChanges, pull, push, signIn, signInWithPassword, signOut } = useCloudSyncCtx();
+  const [mode, setMode] = useState<"password" | "magic">("password");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -126,6 +128,22 @@ function CloudSyncCard() {
     try {
       await signIn(email.trim());
       setSent(true);
+    } catch (e) {
+      setLocalError(e instanceof Error ? e.message : "Erreur de connexion");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const submitPassword = async () => {
+    if (!email.trim() || password.length < 6) {
+      setLocalError(password.length < 6 ? "Mot de passe : 6 caractères minimum." : "Entre un e-mail.");
+      return;
+    }
+    setBusy(true);
+    setLocalError(null);
+    try {
+      await signInWithPassword(email.trim(), password);
     } catch (e) {
       setLocalError(e instanceof Error ? e.message : "Erreur de connexion");
     } finally {
@@ -163,27 +181,79 @@ function CloudSyncCard() {
 
       {configured && !session && (
         <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
-          {sent ? (
+          {/* Mode switch */}
+          <div style={{ display: "inline-flex", gap: 4, background: "var(--bg-2)", padding: 4, borderRadius: 999, alignSelf: "flex-start" }}>
+            {([
+              { id: "password" as const, label: "Mot de passe" },
+              { id: "magic" as const, label: "Lien e-mail" },
+            ]).map((m) => (
+              <button
+                key={m.id}
+                onClick={() => { setMode(m.id); setLocalError(null); setSent(false); }}
+                style={{
+                  padding: "6px 14px",
+                  borderRadius: 999,
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  background: mode === m.id ? "white" : "transparent",
+                  color: mode === m.id ? "var(--ink)" : "var(--ink-2)",
+                  boxShadow: mode === m.id ? "var(--shadow-sm)" : "none",
+                }}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+
+          {mode === "password" ? (
+            <>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="e-mail du compte partagé"
+                  style={{ flex: "1 1 200px", minWidth: 0, padding: "11px 14px", background: "var(--bg-2)", border: "1px solid transparent", borderRadius: 12, fontSize: 14, outline: "none", color: "var(--ink)" }}
+                />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && submitPassword()}
+                  placeholder="mot de passe (6+ caractères)"
+                  style={{ flex: "1 1 200px", minWidth: 0, padding: "11px 14px", background: "var(--bg-2)", border: "1px solid transparent", borderRadius: 12, fontSize: 14, outline: "none", color: "var(--ink)" }}
+                />
+                <Btn kind="primary" size="md" onClick={submitPassword} disabled={busy}>
+                  {busy ? "…" : "Se connecter"}
+                </Btn>
+              </div>
+              <div style={{ fontSize: 11.5, color: "var(--ink-3)", lineHeight: 1.5 }}>
+                <b>Aucun e-mail envoyé</b> → pas de limite. Le compte se crée automatiquement à la première connexion. Utilise le <b>même e-mail + mot de passe</b> sur les deux téléphones pour partager les mêmes données.
+              </div>
+            </>
+          ) : sent ? (
             <div style={{ background: "#E6F5EC", border: "1px solid #B7E0C6", borderRadius: 12, padding: 14, fontSize: 13, color: "var(--ink)" }}>
               ✉️ Un lien de connexion a été envoyé à <b>{email}</b>. Clique dessus pour te connecter. Refais la même opération sur ton autre appareil avec le même e-mail pour les synchroniser.
             </div>
           ) : (
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && submitEmail()}
-                placeholder="ton@email.fr"
-                style={{ flex: "1 1 220px", minWidth: 0, padding: "11px 14px", background: "var(--bg-2)", border: "1px solid transparent", borderRadius: 12, fontSize: 14, outline: "none", color: "var(--ink)" }}
-              />
-              <Btn kind="primary" size="md" onClick={submitEmail} disabled={busy}>
-                {busy ? "Envoi…" : "Recevoir un lien magique"}
-              </Btn>
-            </div>
+            <>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && submitEmail()}
+                  placeholder="ton@email.fr"
+                  style={{ flex: "1 1 220px", minWidth: 0, padding: "11px 14px", background: "var(--bg-2)", border: "1px solid transparent", borderRadius: 12, fontSize: 14, outline: "none", color: "var(--ink)" }}
+                />
+                <Btn kind="primary" size="md" onClick={submitEmail} disabled={busy}>
+                  {busy ? "Envoi…" : "Recevoir un lien magique"}
+                </Btn>
+              </div>
+              <div style={{ fontSize: 11.5, color: "var(--ink-3)" }}>Le service e-mail gratuit de Supabase est limité à quelques envois/heure. Si tu as l&apos;erreur « rate limit », passe en mode <b>Mot de passe</b>.</div>
+            </>
           )}
           {localError && <div style={{ fontSize: 12, color: "#C44A00" }}>{localError}</div>}
-          <div style={{ fontSize: 11.5, color: "var(--ink-3)" }}>Pas de mot de passe. Tu reçois un lien par mail, tu cliques, c&apos;est fait.</div>
         </div>
       )}
 

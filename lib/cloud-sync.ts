@@ -140,6 +140,28 @@ export function useCloudSync() {
     if (e) throw e;
   }, []);
 
+  // Email + password — no email is ever sent, so no rate limit. Tries to sign
+  // in first; if the account doesn't exist yet, creates it then signs in.
+  const signInWithPassword = useCallback(async (email: string, password: string) => {
+    const sb = getSupabase();
+    if (!sb) throw new Error("Supabase non configuré");
+    setError(null);
+    const { error: e } = await sb.auth.signInWithPassword({ email, password });
+    if (!e) return;
+    // Wrong credentials OR account not created yet.
+    if (e.message?.toLowerCase().includes("invalid login")) {
+      const { error: signUpErr, data } = await sb.auth.signUp({ email, password });
+      if (signUpErr) throw signUpErr;
+      // If email confirmation is OFF, a session is returned immediately.
+      if (data.session) return;
+      // If confirmation is ON, sign-in still fails until confirmed — surface a hint.
+      const { error: e2 } = await sb.auth.signInWithPassword({ email, password });
+      if (e2) throw new Error("Compte créé. Désactive « Confirm email » dans Supabase (Authentication → Providers → Email) pour te connecter sans e-mail.");
+      return;
+    }
+    throw e;
+  }, []);
+
   const signOut = useCallback(async () => {
     const sb = getSupabase();
     if (!sb) return;
@@ -157,6 +179,7 @@ export function useCloudSync() {
     pull,
     push,
     signIn,
+    signInWithPassword,
     signOut,
   };
 }
