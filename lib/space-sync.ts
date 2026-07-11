@@ -8,6 +8,7 @@ import { applyBackup, collectLocalData, installLocalStorageWatcher } from "@/lib
 // synced into the shared data itself.
 const CODE_KEY = "bproductive.spaceCode";
 const PUSH_DEBOUNCE_MS = 1500;
+const POLL_MS = 8000; // check the cloud for the other device's changes
 
 export type SpaceStatus = "off" | "idle" | "pushing" | "pulling" | "error";
 
@@ -49,27 +50,36 @@ export function useSpaceSync() {
   }, [configured]);
 
   /* ── pull ─────────────────────────────────────────────────────────── */
-  const pull = useCallback(async (): Promise<"empty" | "applied" | "error"> => {
+  // `silent` is used by the background poller so the UI doesn't flicker
+  // "réception…" every few seconds; it only reports when data actually changes.
+  const pull = useCallback(async (silent = false): Promise<"empty" | "applied" | "error"> => {
     const sb = getSupabase();
     if (!sb || !keyRef.current) return "error";
-    setStatus("pulling");
+    if (!silent) setStatus("pulling");
     setError(null);
     try {
       const { data, error: e } = await sb.rpc("space_pull", { p_key: keyRef.current });
       if (e) throw e;
       const obj = data as Record<string, unknown> | null;
       if (obj && typeof obj === "object" && Object.keys(obj).length > 0) {
-        applyBackup({ version: 1, exportedAt: new Date().toISOString(), data: obj });
-        lastHashRef.current = hashOf(collectLocalData());
-        setLastSync(new Date());
-        setStatus("idle");
+        const remoteHash = hashOf(obj);
+        // Only apply when the remote genuinely differs from what we last
+        // synced — avoids clobbering unsaved local edits and echo loops.
+        if (remoteHash !== lastHashRef.current) {
+          applyBackup({ version: 1, exportedAt: new Date().toISOString(), data: obj });
+          lastHashRef.current = remoteHash;
+          setLastSync(new Date());
+        }
+        if (!silent) setStatus("idle");
         return "applied";
       }
-      setStatus("idle");
+      if (!silent) setStatus("idle");
       return "empty";
     } catch (err) {
-      setError(errMsg(err));
-      setStatus("error");
+      if (!silent) {
+        setError(errMsg(err));
+        setStatus("error");
+      }
       return "error";
     }
   }, []);
@@ -113,6 +123,26 @@ export function useSpaceSync() {
       if (pushTimer.current) clearTimeout(pushTimer.current);
     };
   }, [configured, code, push]);
+
+  /* ── auto-pull: poll the cloud + pull whenever the app regains focus ─ */
+  useEffect(() => {
+    if (!configured || !code) return;
+    const poll = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      pull(true);
+    };
+    const id = setInterval(poll, POLL_MS);
+    const onVisible = () => {
+      if (typeof document === "undefined" || document.visibilityState === "visible") pull(true);
+    };
+    window.addEventListener("focus", onVisible);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(id);
+      window.removeEventListener("focus", onVisible);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [configured, code, pull]);
 
   /* ── connect / disconnect ─────────────────────────────────────────── */
   const connect = useCallback(async (rawCode: string) => {
