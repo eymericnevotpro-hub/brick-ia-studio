@@ -92,8 +92,52 @@ function RevenueRing({
   const accent = view === "partner" ? PARTNER_COLOR : "var(--orange)";
   const label = view === "both" ? "Total commun" : view === "me" ? "Revenus de Brick" : "Revenus de Suzy";
 
+  // Responsive scaling: keep the internal 380px coordinate system, shrink the
+  // whole ring to fit narrow screens so nothing overflows / looks zoomed.
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const update = () => setScale(Math.min(1, el.clientWidth / size));
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Swipe left/right to change the view (touch).
+  const touchX = useRef<number | null>(null);
+  const onTouchStart = (e: React.TouchEvent) => { touchX.current = e.touches[0].clientX; };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchX.current == null) return;
+    const dx = e.changedTouches[0].clientX - touchX.current;
+    touchX.current = null;
+    if (Math.abs(dx) > 40) onCycle(dx < 0 ? 1 : -1);
+  };
+
   return (
-    <div style={{ position: "relative", width: size, height: size }}>
+    <div
+      ref={wrapRef}
+      style={{ position: "relative", width: "min(380px, 86vw)", aspectRatio: "1 / 1", touchAction: "pan-y" }}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
+      {/* left / right arrows on the wrapper so they stay full-size on mobile */}
+      <button onClick={() => onCycle(-1)} title="Vue précédente" style={ringArrowStyle("left")}>‹</button>
+      <button onClick={() => onCycle(1)} title="Vue suivante" style={ringArrowStyle("right")}>›</button>
+
+      <div
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          width: size,
+          height: size,
+          transform: `translate(-50%, -50%) scale(${scale})`,
+          transformOrigin: "center",
+        }}
+      >
       <div
         style={{
           position: "absolute",
@@ -140,10 +184,6 @@ function RevenueRing({
         )}
       </svg>
 
-      {/* left / right arrows to cycle the view */}
-      <button onClick={() => onCycle(-1)} title="Vue précédente" style={ringArrowStyle("left")}>‹</button>
-      <button onClick={() => onCycle(1)} title="Vue suivante" style={ringArrowStyle("right")}>›</button>
-
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4 }}>
         <div style={{ fontSize: 11, color: accent, letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 600 }}>{label}</div>
         <div style={{ fontSize: 11, color: "var(--ink-3)", letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 500, marginTop: -2 }}>
@@ -167,6 +207,7 @@ function RevenueRing({
             Objectif atteint
           </div>
         )}
+      </div>
       </div>
     </div>
   );
@@ -1372,7 +1413,7 @@ function DashboardInner() {
   const modeLabel = goalMode === "net" ? "Net en poche" : "CA brut";
 
   return (
-    <div style={{ position: "relative", zIndex: 1, minHeight: "100vh" }}>
+    <div className="dash" style={{ position: "relative", zIndex: 1, minHeight: "100vh" }}>
       <Confetti active={confetti} />
 
       <div style={{ paddingTop: 8 }}>
@@ -1592,6 +1633,13 @@ function DashboardInner() {
           .charges { grid-template-columns: 1fr 1fr !important; row-gap: 14px !important; }
           .charges > span { display: none !important; }
           .timer-grid { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 640px) {
+          .dash > header, .dash > section, .dash > footer {
+            padding-left: 14px !important;
+            padding-right: 14px !important;
+          }
+          .dash .hero { gap: 16px !important; }
         }
       `}</style>
     </div>
