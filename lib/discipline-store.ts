@@ -54,6 +54,14 @@ export interface Prices {
   longVid: number; // € per long brand video
 }
 
+// Recurring monthly fixed costs beyond the Skool platform fee — other
+// subscriptions, tools, etc. Amounts are already in euros.
+export interface FixedExpense {
+  id: string;
+  label: string;
+  amount: number; // € / month
+}
+
 export interface Fiscal {
   urssaf: number; // social contributions, percent
   impot: number; // versement libératoire, percent
@@ -70,7 +78,12 @@ export interface MonthCounters {
   longVids: number;
   posts: number;
   services: ServiceEntry[];
+  // Partner (Suzy) monthly income — 3 accumulator lines, amounts in €.
+  partner: number[];
 }
+
+// Labels for the 3 partner income lines (persisted at settings level).
+export const DEFAULT_PARTNER_LABELS = ["Salaire Suzy", "Prestation", "Autre revenu"];
 
 export type GoalMode = "net" | "brut";
 
@@ -98,7 +111,7 @@ export const DEFAULT_FISCAL: Fiscal = { urssaf: 24, impot: 2.2 };
 export const DEFAULT_MEMBERS = 24;
 
 export function emptyCounters(): MonthCounters {
-  return { shortVids: 0, longVids: 0, posts: 0, services: [] };
+  return { shortVids: 0, longVids: 0, posts: 0, services: [], partner: [0, 0, 0] };
 }
 
 // ── date helpers ──────────────────────────────────────────────────────────
@@ -131,12 +144,14 @@ export interface FinanceInput {
   members: number;
   fiscal: Fiscal;
   counters: MonthCounters;
+  fixedExpenses?: FixedExpense[];
 }
 
 export interface Finance {
   skoolGrossUsd: number;
   skoolGrossEur: number;
   skoolPlatformEur: number;
+  fixedExpensesEur: number;
   brandGrossEur: number;
   servicesEur: number;
   caBrut: number;
@@ -146,21 +161,23 @@ export interface Finance {
   netEur: number;
 }
 
-export function computeFinance({ prices, members, fiscal, counters }: FinanceInput): Finance {
+export function computeFinance({ prices, members, fiscal, counters, fixedExpenses }: FinanceInput): Finance {
   const skoolGrossUsd = members * prices.skoolUsd;
   const skoolGrossEur = skoolGrossUsd * prices.fx;
   const skoolPlatformEur = prices.skoolCostUsd * prices.fx;
+  const fixedExpensesEur = (fixedExpenses ?? []).reduce((sum, e) => sum + (e.amount || 0), 0);
   const brandGrossEur = counters.shortVids * prices.shortVid + counters.longVids * prices.longVid;
   const servicesEur = (counters.services ?? []).reduce((sum, s) => sum + (s.amount || 0), 0);
   const caBrut = skoolGrossEur + brandGrossEur + servicesEur;
   const urssafEur = caBrut * (fiscal.urssaf / 100);
   const impotEur = caBrut * (fiscal.impot / 100);
   const chargesEur = urssafEur + impotEur;
-  const netEur = caBrut - chargesEur - skoolPlatformEur;
+  const netEur = caBrut - chargesEur - skoolPlatformEur - fixedExpensesEur;
   return {
     skoolGrossUsd,
     skoolGrossEur,
     skoolPlatformEur,
+    fixedExpensesEur,
     brandGrossEur,
     servicesEur,
     caBrut,

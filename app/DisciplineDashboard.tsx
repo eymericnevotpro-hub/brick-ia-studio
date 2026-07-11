@@ -19,8 +19,10 @@ import {
 import {
   DEFAULT_FISCAL,
   DEFAULT_MEMBERS,
+  DEFAULT_PARTNER_LABELS,
   DEFAULT_PRICES,
   Fiscal,
+  FixedExpense,
   GOAL,
   MonthCounters,
   Prices,
@@ -39,26 +41,41 @@ type Breakdown = { key: string; color: string; value: number };
 /* ====================================================================== */
 /*  REVENUE RING                                                          */
 /* ====================================================================== */
+type RevenueView = "both" | "me" | "partner";
+const PARTNER_COLOR = "#FF4F9D";
+
 function RevenueRing({
-  total,
   goal,
   breakdown,
-  modeLabel,
+  myTotal,
+  partnerTotal,
+  view,
+  onCycle,
   monthDate,
 }: {
-  total: number;
   goal: number;
   breakdown: Breakdown[];
-  modeLabel: string;
+  myTotal: number;
+  partnerTotal: number;
+  view: RevenueView;
+  onCycle: (dir: -1 | 1) => void;
   monthDate?: Date;
 }) {
   const size = 380;
-  const stroke = 26;
-  const r = (size - stroke) / 2 - 12;
-  const circ = 2 * Math.PI * r;
-  const pct = Math.min(1, total / goal);
-  const tweenedTotal = useSpring(total, { stiffness: 90, damping: 18 });
+  const stroke = 22;
+  const gap = 8;
+  const rOuter = (size - stroke) / 2 - 12;
+  const rInner = rOuter - stroke - gap;
+  const circOuter = 2 * Math.PI * rOuter;
+  const circInner = 2 * Math.PI * rInner;
+
+  const shownTotal = view === "both" ? myTotal + partnerTotal : view === "me" ? myTotal : partnerTotal;
+  const tweenedTotal = useSpring(shownTotal, { stiffness: 90, damping: 18 });
+  const pct = Math.min(1, shownTotal / goal);
   const tweenedPct = useSpring(pct, { stiffness: 90, damping: 18 });
+
+  const showMine = view !== "partner";
+  const showPartner = view !== "me";
 
   const segs = useMemo(
     () =>
@@ -69,8 +86,11 @@ function RevenueRing({
       }),
     [breakdown, goal],
   );
+  const partnerPortion = Math.min(1, partnerTotal / goal);
 
-  const reached = total >= goal;
+  const reached = shownTotal >= goal;
+  const accent = view === "partner" ? PARTNER_COLOR : "var(--orange)";
+  const label = view === "both" ? "Total commun" : view === "me" ? "Mes revenus" : "Revenus de Suzy";
 
   return (
     <div style={{ position: "relative", width: size, height: size }}>
@@ -78,74 +98,101 @@ function RevenueRing({
         style={{
           position: "absolute",
           inset: -20,
-          background: "radial-gradient(closest-side, rgba(255,106,26,0.18), transparent 70%)",
+          background: `radial-gradient(closest-side, ${view === "partner" ? "rgba(255,79,157,0.18)" : "rgba(255,106,26,0.18)"}, transparent 70%)`,
           animation: reached ? "pulse-ring 1.6s ease-in-out infinite" : "none",
           pointerEvents: "none",
         }}
       />
       <svg width={size} height={size} style={{ display: "block", transform: "rotate(-90deg)" }}>
-        <circle cx={size / 2} cy={size / 2} r={r} stroke="rgba(26,18,8,0.06)" strokeWidth={stroke} fill="none" />
-        {segs.map((s) => (
+        {/* tracks */}
+        {showMine && <circle cx={size / 2} cy={size / 2} r={rOuter} stroke="rgba(26,18,8,0.06)" strokeWidth={stroke} fill="none" />}
+        {showPartner && <circle cx={size / 2} cy={size / 2} r={rInner} stroke="rgba(255,79,157,0.10)" strokeWidth={stroke} fill="none" />}
+        {/* my segments — outer ring */}
+        {showMine &&
+          segs.map((s) => (
+            <circle
+              key={s.key}
+              cx={size / 2}
+              cy={size / 2}
+              r={rOuter}
+              stroke={s.color}
+              strokeWidth={stroke}
+              fill="none"
+              strokeLinecap="round"
+              strokeDasharray={`${s.portion * circOuter} ${circOuter}`}
+              strokeDashoffset={-s.offset * circOuter}
+              style={{ transition: "stroke-dasharray 700ms var(--bounce), stroke-dashoffset 700ms var(--bounce)" }}
+            />
+          ))}
+        {/* Suzy — inner ring (pink) */}
+        {showPartner && (
           <circle
-            key={s.key}
             cx={size / 2}
             cy={size / 2}
-            r={r}
-            stroke={s.color}
+            r={rInner}
+            stroke={PARTNER_COLOR}
             strokeWidth={stroke}
             fill="none"
             strokeLinecap="round"
-            strokeDasharray={`${s.portion * circ} ${circ}`}
-            strokeDashoffset={-s.offset * circ}
-            style={{ transition: "stroke-dasharray 700ms var(--bounce), stroke-dashoffset 700ms var(--bounce)" }}
+            strokeDasharray={`${partnerPortion * circInner} ${circInner}`}
+            style={{ transition: "stroke-dasharray 700ms var(--bounce)" }}
           />
-        ))}
+        )}
       </svg>
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 4,
-        }}
-      >
-        <div style={{ fontSize: 11, color: "var(--orange)", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 600 }}>
-          {modeLabel || "Total"}
-        </div>
+
+      {/* left / right arrows to cycle the view */}
+      <button onClick={() => onCycle(-1)} title="Vue précédente" style={ringArrowStyle("left")}>‹</button>
+      <button onClick={() => onCycle(1)} title="Vue suivante" style={ringArrowStyle("right")}>›</button>
+
+      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4 }}>
+        <div style={{ fontSize: 11, color: accent, letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 600 }}>{label}</div>
         <div style={{ fontSize: 11, color: "var(--ink-3)", letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 500, marginTop: -2 }}>
           {monthLabel(monthDate)}
         </div>
-        <div style={{ fontSize: 60, fontWeight: 600, letterSpacing: "-0.04em", lineHeight: 1, fontFamily: "Geist", display: "flex", alignItems: "baseline" }}>
+        <div style={{ fontSize: 56, fontWeight: 600, letterSpacing: "-0.04em", lineHeight: 1, fontFamily: "Geist", display: "flex", alignItems: "baseline" }}>
           <AnimatedNumber value={tweenedTotal} />
-          <span style={{ fontSize: 28, marginLeft: 4, color: "var(--orange)" }}>€</span>
+          <span style={{ fontSize: 26, marginLeft: 4, color: accent }}>€</span>
         </div>
         <div className="mono" style={{ fontSize: 14, color: "var(--ink-2)", marginTop: 4 }}>
           {Math.round(tweenedPct * 100)}% <span style={{ color: "var(--ink-3)" }}>· {fmtEur(goal)}</span>
         </div>
+        {view === "both" && (
+          <div className="mono" style={{ fontSize: 11.5, color: "var(--ink-3)", marginTop: 4, display: "flex", gap: 10 }}>
+            <span style={{ color: "var(--orange)" }}>● {fmtEur(myTotal)}</span>
+            <span style={{ color: PARTNER_COLOR }}>● {fmtEur(partnerTotal)}</span>
+          </div>
+        )}
         {reached && (
-          <div
-            style={{
-              marginTop: 8,
-              padding: "4px 10px",
-              background: "var(--green)",
-              color: "white",
-              borderRadius: 999,
-              fontSize: 11,
-              fontWeight: 600,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              animation: "pop-in 500ms var(--bounce)",
-            }}
-          >
+          <div style={{ marginTop: 8, padding: "4px 10px", background: "var(--green)", color: "white", borderRadius: 999, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", animation: "pop-in 500ms var(--bounce)" }}>
             Objectif atteint
           </div>
         )}
       </div>
     </div>
   );
+}
+
+function ringArrowStyle(side: "left" | "right"): React.CSSProperties {
+  return {
+    position: "absolute",
+    top: "50%",
+    [side]: -6,
+    transform: "translateY(-50%)",
+    width: 34,
+    height: 34,
+    borderRadius: "50%",
+    background: "var(--card)",
+    border: "1px solid var(--line)",
+    boxShadow: "var(--shadow-sm)",
+    color: "var(--ink-2)",
+    fontSize: 20,
+    fontWeight: 700,
+    lineHeight: 1,
+    display: "grid",
+    placeItems: "center",
+    cursor: "pointer",
+    zIndex: 3,
+  };
 }
 
 /* ====================================================================== */
@@ -713,6 +760,137 @@ function ServicesCard({
 }
 
 /* ====================================================================== */
+/*  PARTNER CARD — Suzy's income, 3 accumulator lines                     */
+/* ====================================================================== */
+function PartnerCard({
+  labels,
+  setLabels,
+  values,
+  total,
+  onAdd,
+}: {
+  labels: string[];
+  setLabels: (v: string[] | ((p: string[]) => string[])) => void;
+  values: number[];
+  total: number;
+  onAdd: (i: number, amount: number) => void;
+}) {
+  return (
+    <div
+      style={{
+        position: "relative",
+        background: "var(--card)",
+        borderRadius: 24,
+        padding: 22,
+        boxShadow: "var(--shadow-sm)",
+        border: "1px solid var(--line)",
+        display: "flex",
+        flexDirection: "column",
+        gap: 16,
+        animation: "fade-up 600ms var(--ease-out) backwards",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ width: 8, height: 8, borderRadius: 4, background: PARTNER_COLOR }} />
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, letterSpacing: "-0.01em" }}>Revenus de Suzy</h3>
+          </div>
+          <div style={{ fontSize: 12.5, color: "var(--ink-2)", marginTop: 4, marginLeft: 16 }}>Salaire, prestations… montants libres</div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div className="mono" style={{ fontSize: 22, fontWeight: 600, color: PARTNER_COLOR, letterSpacing: "-0.02em", lineHeight: 1 }}>
+            <AnimatedNumber value={total} format={(n) => fmtEur(n)} />
+          </div>
+          <div style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 4, letterSpacing: "0.06em", textTransform: "uppercase" }}>ce mois</div>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {[0, 1, 2].map((i) => (
+          <PartnerLine
+            key={i}
+            label={labels[i] ?? ""}
+            value={values[i] ?? 0}
+            onLabel={(v) => setLabels((prev) => { const next = [...prev]; next[i] = v; return next; })}
+            onAdd={(amount) => onAdd(i, amount)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PartnerLine({
+  label,
+  value,
+  onLabel,
+  onAdd,
+}: {
+  label: string;
+  value: number;
+  onLabel: (v: string) => void;
+  onAdd: (amount: number) => void;
+}) {
+  const [amount, setAmount] = useState("");
+  const [burst, setBurst] = useState<{ id: number; text: string } | null>(null);
+
+  const submit = (sign: 1 | -1) => {
+    const v = Number(String(amount).replace(",", "."));
+    if (!Number.isFinite(v) || v === 0) return;
+    onAdd(sign * Math.abs(v));
+    if (sign > 0) {
+      const id = Math.random();
+      setBurst({ id, text: `+${fmtEur(Math.abs(v))}` });
+      setTimeout(() => setBurst(null), 900);
+    }
+    setAmount("");
+  };
+
+  return (
+    <div style={{ position: "relative", background: "var(--bg-2)", borderRadius: 14, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <input
+          value={label}
+          onChange={(e) => onLabel(e.target.value)}
+          placeholder="Libellé"
+          style={{ flex: 1, minWidth: 0, background: "transparent", border: "none", outline: "none", fontSize: 13, fontWeight: 600, color: "var(--ink)" }}
+        />
+        <div className="mono" style={{ fontSize: 16, fontWeight: 700, color: PARTNER_COLOR }}>{fmtEur(value)}</div>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", background: "white", borderRadius: 10, padding: "7px 10px", flex: 1 }}>
+          <input
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && submit(1)}
+            placeholder="78"
+            style={{ flex: 1, width: "100%", background: "transparent", border: "none", outline: "none", fontSize: 14, fontFamily: "Geist Mono, monospace", fontWeight: 600, color: "var(--ink)" }}
+          />
+          <span style={{ fontSize: 12, color: "var(--ink-2)" }}>€</span>
+        </div>
+        <button
+          onClick={() => submit(-1)}
+          title="Retirer ce montant"
+          style={{ width: 32, height: 32, borderRadius: "50%", background: "white", border: "1px solid var(--line)", display: "grid", placeItems: "center", flexShrink: 0 }}
+        >
+          <Icon name="minus" size={14} />
+        </button>
+        <button
+          onClick={() => submit(1)}
+          title="Ajouter ce montant"
+          style={{ padding: "0 14px", height: 32, borderRadius: 999, background: PARTNER_COLOR, color: "white", fontSize: 13, fontWeight: 600, flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 4 }}
+        >
+          <Icon name="plus" size={14} color="white" /> Ajouter
+        </button>
+      </div>
+      {burst && <FloatLabel key={burst.id} text={burst.text} color={PARTNER_COLOR} />}
+    </div>
+  );
+}
+
+/* ====================================================================== */
 /*  SETTINGS DRAWER                                                       */
 /* ====================================================================== */
 function SectionLabel({ children }: { children: ReactNode }) {
@@ -767,6 +945,8 @@ function Settings({
   setGoalMode,
   goalEur,
   setGoalEur,
+  fixedExpenses,
+  setFixedExpenses,
 }: {
   open: boolean;
   onClose: () => void;
@@ -780,6 +960,8 @@ function Settings({
   setGoalMode: (v: "net" | "brut") => void;
   goalEur: number;
   setGoalEur: (v: number) => void;
+  fixedExpenses: FixedExpense[];
+  setFixedExpenses: (v: FixedExpense[] | ((p: FixedExpense[]) => FixedExpense[])) => void;
 }) {
   if (!open) return null;
   return (
@@ -859,6 +1041,43 @@ function Settings({
           <Field label="Taux de change USD → EUR" value={prices.fx} onChange={(v) => setPrices((p) => ({ ...p, fx: v }))} step={0.01} suffix="€/$" />
         </div>
 
+        <SectionLabel>Frais fixes mensuels (€)</SectionLabel>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 6 }}>
+          {fixedExpenses.map((fe) => (
+            <div key={fe.id} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <input
+                value={fe.label}
+                onChange={(e) => setFixedExpenses((prev) => prev.map((x) => (x.id === fe.id ? { ...x, label: e.target.value } : x)))}
+                placeholder="Ex : abonnement Adobe"
+                style={{ flex: 1, minWidth: 0, background: "var(--bg-2)", border: "1px solid transparent", borderRadius: 10, padding: "9px 12px", fontSize: 13.5, outline: "none", color: "var(--ink)" }}
+              />
+              <div style={{ display: "flex", alignItems: "center", background: "var(--bg-2)", borderRadius: 10, padding: "9px 12px", width: 110 }}>
+                <input
+                  type="number"
+                  min={0}
+                  value={fe.amount}
+                  onChange={(e) => setFixedExpenses((prev) => prev.map((x) => (x.id === fe.id ? { ...x, amount: Math.max(0, Number(e.target.value) || 0) } : x)))}
+                  style={{ flex: 1, width: "100%", background: "transparent", border: "none", outline: "none", fontSize: 14, fontFamily: "Geist Mono, monospace", fontWeight: 600, color: "var(--ink)" }}
+                />
+                <span style={{ fontSize: 12, color: "var(--ink-2)" }}>€</span>
+              </div>
+              <button
+                onClick={() => setFixedExpenses((prev) => prev.filter((x) => x.id !== fe.id))}
+                title="Supprimer"
+                style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(196,74,0,0.08)", color: "#C44A00", fontSize: 14, fontWeight: 700, display: "grid", placeItems: "center", flexShrink: 0 }}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+        <button
+          onClick={() => setFixedExpenses((prev) => [...prev, { id: crypto.randomUUID(), label: "", amount: 0 }])}
+          style={{ marginBottom: 18, padding: "8px 14px", borderRadius: 999, background: "var(--orange-50)", color: "var(--orange)", fontSize: 13, fontWeight: 600, border: "1px solid var(--orange-100)" }}
+        >
+          + Ajouter un frais fixe
+        </button>
+
         <SectionLabel>Vidéos marques</SectionLabel>
         <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 18 }}>
           <Field label="Prix vidéo courte" value={prices.shortVid} onChange={(v) => setPrices((p) => ({ ...p, shortVid: v }))} suffix="€" />
@@ -902,6 +1121,7 @@ function ChargesStrip({
   impotPct,
   platformEur,
   platformUsd,
+  fixedEur,
   netEur,
 }: {
   caBrut: number;
@@ -911,8 +1131,12 @@ function ChargesStrip({
   impotPct: number;
   platformEur: number;
   platformUsd: number;
+  fixedEur: number;
   netEur: number;
 }) {
+  const cols = fixedEur > 0
+    ? "1fr auto 1fr auto 1fr auto 1fr auto 1fr auto 1fr"
+    : "1fr auto 1fr auto 1fr auto 1fr auto 1fr";
   return (
     <div
       className="charges"
@@ -922,7 +1146,7 @@ function ChargesStrip({
         borderRadius: 18,
         padding: "14px 18px",
         display: "grid",
-        gridTemplateColumns: "1fr auto 1fr auto 1fr auto 1fr auto 1fr",
+        gridTemplateColumns: cols,
         alignItems: "center",
         gap: 12,
         boxShadow: "var(--shadow-sm)",
@@ -936,6 +1160,8 @@ function ChargesStrip({
       <ChargeCell label={`Impôt · ${impotPct}%`} value={impotEur} color="var(--ink-2)" small />
       <ChargeSep>−</ChargeSep>
       <ChargeCell label={`Skool · ${fmtUsd(platformUsd)}`} value={platformEur} color="var(--ink-2)" small />
+      {fixedEur > 0 && <ChargeSep>−</ChargeSep>}
+      {fixedEur > 0 && <ChargeCell label="Frais fixes" value={fixedEur} color="var(--ink-2)" small />}
       <ChargeSep>=</ChargeSep>
       <ChargeCell label="Net en poche" value={Math.max(0, netEur)} color="var(--orange)" />
     </div>
@@ -1075,6 +1301,11 @@ function DashboardInner() {
   const [goalMode, setGoalMode] = useLS<"net" | "brut">("disc.goalMode", "net");
   // Monthly income target — editable in settings, defaults to 10 000 €.
   const [goalEur, setGoalEur] = useLS<number>("disc.goalEur", GOAL);
+  // Recurring monthly fixed costs (subscriptions, tools…) beyond Skool.
+  const [fixedExpenses, setFixedExpenses] = useLS<FixedExpense[]>("disc.fixedExpenses", []);
+  // Partner income line labels + which revenues the ring shows.
+  const [partnerLabels, setPartnerLabels] = useLS<string[]>("disc.partnerLabels", DEFAULT_PARTNER_LABELS);
+  const [revenueView, setRevenueView] = useLS<RevenueView>("disc.revenueView", "both");
 
   const [counters, setCounters] = useLS<Record<string, MonthCounters>>("disc.counters", {});
   const cur: MonthCounters = { ...emptyCounters(), ...(counters[mk] ?? {}) };
@@ -1086,10 +1317,21 @@ function DashboardInner() {
   const addShort = () => setCur({ shortVids: cur.shortVids + 1 });
   const addLong = () => setCur({ longVids: cur.longVids + 1 });
 
-  const fin = computeFinance({ prices, members, fiscal, counters: cur });
-  const { skoolGrossUsd, skoolGrossEur, skoolPlatformEur, brandGrossEur, servicesEur, caBrut, urssafEur, impotEur, netEur } = fin;
+  // Partner (Suzy) income — 3 accumulator lines; adding an amount adds to the line.
+  const partnerVals = cur.partner && cur.partner.length === 3 ? cur.partner : [0, 0, 0];
+  const bumpPartner = (i: number, delta: number) => {
+    const next = [...partnerVals];
+    next[i] = Math.max(0, (next[i] || 0) + delta);
+    setCur({ partner: next });
+  };
 
-  const displayTotal = goalMode === "net" ? Math.max(0, netEur) : caBrut;
+  const fin = computeFinance({ prices, members, fiscal, counters: cur, fixedExpenses });
+  const { skoolGrossUsd, skoolGrossEur, skoolPlatformEur, fixedExpensesEur, brandGrossEur, servicesEur, caBrut, urssafEur, impotEur, netEur } = fin;
+
+  const myTotal = goalMode === "net" ? Math.max(0, netEur) : caBrut;
+  const partnerTotal = partnerVals.reduce((s, v) => s + (v || 0), 0);
+  // The figure the hero / need-tiles follow depends on the ring's view.
+  const displayTotal = revenueView === "both" ? myTotal + partnerTotal : revenueView === "me" ? myTotal : partnerTotal;
 
   const [confetti, setConfetti] = useState(false);
   const prevReachedRef = useRef(displayTotal >= goalEur);
@@ -1101,6 +1343,12 @@ function DashboardInner() {
     }
     prevReachedRef.current = reached;
   }, [displayTotal, goalEur]);
+
+  const cycleView = (dir: -1 | 1) => {
+    const order: RevenueView[] = ["both", "me", "partner"];
+    const idx = order.indexOf(revenueView);
+    setRevenueView(order[(idx + dir + order.length) % order.length]);
+  };
 
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -1199,7 +1447,15 @@ function DashboardInner() {
         style={{ maxWidth: 1240, margin: "0 auto", padding: "16px 28px 28px", display: "grid", gridTemplateColumns: "minmax(380px, 460px) 1fr", gap: 36, alignItems: "center" }}
       >
         <div style={{ display: "grid", placeItems: "center" }}>
-          <RevenueRing total={displayTotal} goal={goalEur} breakdown={breakdown} modeLabel={modeLabel} monthDate={viewMonth} />
+          <RevenueRing
+            goal={goalEur}
+            breakdown={breakdown}
+            myTotal={myTotal}
+            partnerTotal={partnerTotal}
+            view={revenueView}
+            onCycle={cycleView}
+            monthDate={viewMonth}
+          />
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 18, paddingLeft: 8 }}>
           <div>
@@ -1223,6 +1479,7 @@ function DashboardInner() {
             impotPct={fiscal.impot}
             platformEur={skoolPlatformEur}
             platformUsd={prices.skoolCostUsd}
+            fixedEur={fixedExpensesEur}
             netEur={netEur}
           />
         </div>
@@ -1280,28 +1537,12 @@ function DashboardInner() {
           ]}
         />
 
-        <StreamCard
-          title="Contenu TikTok / Insta"
-          sub="Carburant de l'algo"
-          color="#C44A00"
-          dot="#C44A00"
-          total={0}
-          lines={[
-            {
-              label: "Posts publiés",
-              hint: "ce mois-ci",
-              value: cur.posts,
-              plusLabel: "+1 post",
-              onPlus: () => setCur({ posts: cur.posts + 1 }),
-              onMinus: () => setCur({ posts: Math.max(0, cur.posts - 1) }),
-            },
-          ]}
-          footer={
-            <div style={{ fontSize: 12, color: "var(--ink-2)", display: "flex", alignItems: "center", gap: 6 }}>
-              <Icon name="bolt" size={14} color="var(--ink-3)" />
-              Pas de revenu direct, mais le moteur de tout le reste.
-            </div>
-          }
+        <PartnerCard
+          labels={partnerLabels}
+          setLabels={setPartnerLabels}
+          values={partnerVals}
+          total={partnerTotal}
+          onAdd={(i, amount) => bumpPartner(i, amount)}
         />
       </section>
 
@@ -1337,6 +1578,8 @@ function DashboardInner() {
         setGoalMode={setGoalMode}
         goalEur={goalEur}
         setGoalEur={setGoalEur}
+        fixedExpenses={fixedExpenses}
+        setFixedExpenses={setFixedExpenses}
       />
 
       <style>{`
