@@ -428,6 +428,7 @@ function GoalCard({
 }) {
   const { goal, saved, remaining, remainingTotal, pct, reached } = p;
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [customMonthly, setCustomMonthly] = useState("");
   // ETA and "in X months" projections both count what's still missing from
   // the cagnotte until this goal is fully funded — including everything that
   // sits above it in priority.
@@ -614,6 +615,36 @@ function GoalCard({
                 </div>
               );
             })}
+
+            {/* Custom monthly amount → time to reach */}
+            {(() => {
+              const v = Number(String(customMonthly).replace(",", "."));
+              const valid = Number.isFinite(v) && v > 0;
+              const months = valid ? remainingTotal / v : 0;
+              return (
+                <div style={{ background: "var(--orange-50)", border: "1px solid var(--orange-100)", borderRadius: 10, padding: "8px 10px", gridColumn: "1 / -1" }}>
+                  <div style={{ fontSize: 10, color: "var(--orange)", letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 700, marginBottom: 4 }}>Personnaliser</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", background: "white", borderRadius: 8, padding: "6px 10px", width: 120 }}>
+                      <input
+                        type="number"
+                        min={0}
+                        value={customMonthly}
+                        onChange={(e) => setCustomMonthly(e.target.value)}
+                        placeholder="500"
+                        style={{ flex: 1, width: "100%", background: "transparent", border: "none", outline: "none", fontSize: 15, fontFamily: "Geist Mono, monospace", fontWeight: 700, color: "var(--ink)" }}
+                      />
+                      <span style={{ fontSize: 12, color: "var(--ink-2)" }}>€/mois</span>
+                    </div>
+                    <div style={{ fontSize: 13, color: "var(--ink)" }}>
+                      {valid
+                        ? <>→ objectif atteint en <b style={{ color: "var(--orange)" }}>{fmtMonths(months)}</b> <span className="mono" style={{ color: "var(--ink-3)", fontSize: 12 }}>(≈ {fmtDateShort(etaFromMonths(months).date)})</span></>
+                        : <span style={{ color: "var(--ink-3)" }}>Tape un montant mensuel pour voir le délai.</span>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
