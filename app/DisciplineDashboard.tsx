@@ -1267,6 +1267,42 @@ function PartnerChargesStrip({
   );
 }
 
+function SavingsCard({ value, brickNet, suzyNet, hasPartner }: { value: number; brickNet: number; suzyNet: number; hasPartner: boolean }) {
+  const positive = value >= 0;
+  return (
+    <div
+      style={{
+        background: positive ? "linear-gradient(135deg, #E6F5EC 0%, #D2EDDD 100%)" : "linear-gradient(135deg, #FFE9E0 0%, #FFD9CB 100%)",
+        border: `1px solid ${positive ? "#B7E0C6" : "#F2C0AC"}`,
+        borderRadius: 18,
+        padding: "16px 20px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 16,
+        flexWrap: "wrap",
+        boxShadow: "var(--shadow-sm)",
+        animation: "fade-up 600ms var(--ease-out) 320ms backwards",
+      }}
+    >
+      <div>
+        <div style={{ fontSize: 11, color: positive ? "var(--green)" : "#C44A00", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 700 }}>
+          {positive ? "💰 Épargne possible ce mois" : "⚠ Déficit ce mois"}
+        </div>
+        <div style={{ fontSize: 12, color: "var(--ink-2)", marginTop: 4 }}>
+          {hasPartner
+            ? <>Net Brick {fmtEur(brickNet)} + Net Suzy {fmtEur(suzyNet)}, après charges &amp; frais fixes</>
+            : <>Ce qui reste après charges &amp; frais fixes (loyer, courses…)</>}
+        </div>
+      </div>
+      <div className="mono" style={{ fontSize: 34, fontWeight: 700, letterSpacing: "-0.03em", color: positive ? "var(--green)" : "#C44A00", lineHeight: 1 }}>
+        <AnimatedNumber value={value} format={fmtEur} />
+        <span style={{ fontSize: 14, fontWeight: 500, color: "var(--ink-3)", marginLeft: 4 }}>/mois</span>
+      </div>
+    </div>
+  );
+}
+
 /* ====================================================================== */
 /*  PACE WIDGET — dynamic micro-objectives                                */
 /* ====================================================================== */
@@ -1447,6 +1483,11 @@ function DashboardInner() {
     prevReachedRef.current = reached;
   }, [displayTotal, goalEur]);
 
+  // Theoretical monthly savings = everyone's net after ALL charges and fixed
+  // costs (rent, food…). Always computed from net, whatever the view toggle.
+  const suzyNet = partnerRaw * partnerNetRatio;
+  const savingsPotential = netEur + suzyNet;
+
   const cycleView = (dir: -1 | 1) => {
     const order: RevenueView[] = ["both", "me", "partner"];
     const idx = order.indexOf(revenueView);
@@ -1592,9 +1633,10 @@ function DashboardInner() {
               impotEur={partnerRaw * (partnerFiscal.impot / 100)}
               urssafPct={partnerFiscal.urssaf}
               impotPct={partnerFiscal.impot}
-              netEur={partnerRaw * partnerNetRatio}
+              netEur={suzyNet}
             />
           )}
+          <SavingsCard value={savingsPotential} brickNet={netEur} suzyNet={suzyNet} hasPartner={partnerRaw > 0} />
         </div>
       </section>
 
