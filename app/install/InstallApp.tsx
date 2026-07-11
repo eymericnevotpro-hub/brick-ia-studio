@@ -3,7 +3,7 @@
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { Btn } from "@/components/discipline-ui";
 import { applyBackup, downloadBackup, readBackupFile, RestoreResult } from "@/lib/backup";
-import { useCloudSyncCtx } from "@/components/CloudSyncProvider";
+import { useCloudSyncCtx, useSpaceSyncCtx } from "@/components/CloudSyncProvider";
 
 export default function InstallApp() {
   const [origin, setOrigin] = useState<string>("");
@@ -92,20 +92,192 @@ export default function InstallApp() {
 
       <Spacer />
 
-      {/* Cloud sync */}
-      <CloudSyncCard />
+      {/* Space code sync — the simple path */}
+      <SpaceSyncCard origin={origin} />
 
       <Spacer />
 
       {/* Backup local */}
       <BackupCard />
 
+      <Spacer />
+
+      {/* Account-based sync — advanced fallback */}
+      <details>
+        <summary style={{ cursor: "pointer", fontSize: 13, color: "var(--ink-2)", fontWeight: 600, padding: "10px 14px", background: "var(--bg-2)", borderRadius: 12, listStyle: "none" }}>
+          ▸ Avancé · sync par compte (e-mail / mot de passe)
+        </summary>
+        <div style={{ marginTop: 12 }}>
+          <CloudSyncCard />
+        </div>
+      </details>
+
       <div style={{ fontSize: 11.5, color: "var(--ink-3)", lineHeight: 1.55, padding: "16px 4px 0" }}>
-        Choisis ce qui te convient le mieux : le <b>sync cloud</b> est automatique entre tes appareils ;
-        le <b>backup local</b> ne demande aucun compte et te fait un fichier <span className="mono">.json</span> à garder où tu veux.
+        Le plus simple : le <b>code de partage</b> — tapez le même code secret sur les deux téléphones, c&apos;est synchro.
+        Le <b>backup local</b> ne demande aucune configuration et te fait un fichier <span className="mono">.json</span> à garder.
       </div>
     </div>
   );
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/*  Space code sync card (the simple path)                               */
+/* ────────────────────────────────────────────────────────────────────── */
+
+const SPACE_SQL = `create table if not exists public.shared_spaces (
+  space_key text primary key,
+  data jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+alter table public.shared_spaces enable row level security;
+
+create or replace function public.space_pull(p_key text)
+returns jsonb language sql security definer set search_path = public as $$
+  select coalesce((select data from public.shared_spaces where space_key = p_key), '{}'::jsonb);
+$$;
+
+create or replace function public.space_push(p_key text, p_data jsonb)
+returns void language sql security definer set search_path = public as $$
+  insert into public.shared_spaces (space_key, data, updated_at)
+  values (p_key, p_data, now())
+  on conflict (space_key) do update set data = excluded.data, updated_at = now();
+$$;
+
+revoke all on function public.space_pull(text) from public;
+revoke all on function public.space_push(text, jsonb) from public;
+grant execute on function public.space_pull(text) to anon, authenticated;
+grant execute on function public.space_push(text, jsonb) to anon, authenticated;`;
+
+function SpaceSyncCard({ origin }: { origin: string }) {
+  const { configured, code, status, lastSync, error, pending, connect, disconnect, push, pull } = useSpaceSyncCtx();
+  const [input, setInput] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [copiedSql, setCopiedSql] = useState(false);
+
+  const doConnect = async () => {
+    if (input.trim().length < 4) {
+      setLocalError("Choisis un code d'au moins 4 caractères.");
+      return;
+    }
+    setBusy(true);
+    setLocalError(null);
+    try {
+      await connect(input.trim());
+      setInput("");
+    } catch (e) {
+      setLocalError(e instanceof Error ? e.message : "Erreur");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const copySql = async () => {
+    try {
+      await navigator.clipboard.writeText(SPACE_SQL);
+      setCopiedSql(true);
+      setTimeout(() => setCopiedSql(false), 2000);
+    } catch { /* ignore */ }
+  };
+
+  return (
+    <Card>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ width: 8, height: 8, borderRadius: 4, background: code ? "var(--green)" : "var(--orange)" }} />
+            <div style={{ fontSize: 11, color: "var(--orange)", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700 }}>
+              2 · Partager entre appareils
+            </div>
+          </div>
+          <h2 style={{ margin: "6px 0 0", fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em" }}>Code de partage</h2>
+          <p style={{ fontSize: 13.5, color: "var(--ink-2)", lineHeight: 1.55, marginTop: 6 }}>
+            Tape le <b>même code secret</b> sur tes deux téléphones et tout se synchronise. Aucun compte, aucun e-mail.
+          </p>
+        </div>
+        {code && (
+          <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--green)", background: "#E6F5EC", padding: "4px 10px", borderRadius: 999, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+            Connecté
+          </span>
+        )}
+      </div>
+
+      {!configured && (
+        <div style={{ background: "var(--orange-50)", border: "1px solid var(--orange-100)", borderRadius: 12, padding: 14, marginTop: 12, fontSize: 13, color: "var(--ink)", lineHeight: 1.55 }}>
+          Supabase n&apos;est pas configuré (variables <span className="mono">NEXT_PUBLIC_SUPABASE_URL</span> et <span className="mono">NEXT_PUBLIC_SUPABASE_ANON_KEY</span> sur Vercel).
+        </div>
+      )}
+
+      {configured && !code && (
+        <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+          {/* One-time SQL setup */}
+          <details style={{ background: "var(--bg-2)", borderRadius: 12, padding: 12 }}>
+            <summary style={{ cursor: "pointer", fontSize: 12.5, color: "var(--ink)", fontWeight: 600 }}>
+              ⚙️ Installation (à faire UNE fois) — coller ce SQL dans Supabase
+            </summary>
+            <div style={{ marginTop: 10, fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.6 }}>
+              Supabase → <b>SQL Editor</b> → <b>New query</b> → colle le code ci-dessous → <b>Run</b>. C&apos;est tout, à ne faire qu&apos;une seule fois pour ton projet.
+              <div style={{ position: "relative", marginTop: 8 }}>
+                <pre style={{ background: "var(--ink)", color: "#FFE0C7", borderRadius: 10, padding: 12, fontSize: 11, overflow: "auto", maxHeight: 200, margin: 0 }}>
+                  <code>{SPACE_SQL}</code>
+                </pre>
+                <button
+                  onClick={copySql}
+                  style={{ position: "absolute", top: 8, right: 8, padding: "5px 10px", borderRadius: 8, background: "var(--orange)", color: "white", fontSize: 12, fontWeight: 600 }}
+                >
+                  {copiedSql ? "✓ Copié" : "Copier le SQL"}
+                </button>
+              </div>
+            </div>
+          </details>
+
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && doConnect()}
+              placeholder="ex : eymeric-suzy-maison-2026"
+              style={{ flex: "1 1 240px", minWidth: 0, padding: "11px 14px", background: "var(--bg-2)", border: "1px solid transparent", borderRadius: 12, fontSize: 14, outline: "none", color: "var(--ink)" }}
+            />
+            <Btn kind="primary" size="md" onClick={doConnect} disabled={busy}>
+              {busy ? "…" : "Connecter"}
+            </Btn>
+          </div>
+          {localError && <div style={{ fontSize: 12, color: "#C44A00" }}>{localError}</div>}
+          <div style={{ fontSize: 11.5, color: "var(--ink-3)", lineHeight: 1.5 }}>
+            <b>Choisis un code unique</b> (comme un mot de passe). Le premier appareil qui se connecte envoie ses données ; les suivants les récupèrent. <b>Connecte d&apos;abord l&apos;appareil qui a déjà tes données.</b>
+          </div>
+        </div>
+      )}
+
+      {configured && code && (
+        <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10 }}>
+            <Tile label="Code actif" value={code} />
+            <Tile label="Dernière synchro" value={lastSync ? lastSync.toLocaleTimeString("fr-FR") : "—"} />
+            <Tile label="Statut" value={spaceStatusLabel(status, pending)} accent={status === "pushing" || status === "pulling"} />
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <Btn kind="soft" size="sm" onClick={() => push(true)}>Pousser maintenant</Btn>
+            <Btn kind="soft" size="sm" onClick={() => pull()}>Tirer du cloud</Btn>
+            <Btn kind="ghost" size="sm" onClick={disconnect}>Déconnecter ce code</Btn>
+          </div>
+          {error && <div style={{ fontSize: 12, color: "#C44A00" }}>{error}</div>}
+          <div style={{ fontSize: 11.5, color: "var(--ink-3)", lineHeight: 1.55 }}>
+            Sur l&apos;autre appareil : ouvre cette page{origin ? ` (${origin})` : ""}, tape le <b>même code</b>, et les données arrivent. Toute modif est repoussée automatiquement.
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function spaceStatusLabel(s: "off" | "idle" | "pushing" | "pulling" | "error", pending: boolean): string {
+  if (s === "off") return "inactif";
+  if (s === "pushing") return "envoi…";
+  if (s === "pulling") return "réception…";
+  if (s === "error") return "erreur";
+  return pending ? "en attente" : "à jour";
 }
 
 /* ────────────────────────────────────────────────────────────────────── */
