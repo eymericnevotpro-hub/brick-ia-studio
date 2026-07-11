@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Bproductive — Objectifs & habitudes",
     short_name: "Bproductive",
     description:
-      "Bproductive : discipline, objectifs financiers, programme planche et générateur de miniature 9:16 — tout en local sur ton appareil.",
+      "Bproductive : discipline, objectifs financiers et générateur de miniature 9:16 — tout en local sur ton appareil.",
     id: "/",
     start_url: "/",
     scope: "/",
@@ -39,13 +39,6 @@ export default function manifest(): MetadataRoute.Manifest {
         short_name: "Objectifs",
         description: "Cagnotte et rêves chiffrés",
         url: "/goals",
-        icons: [{ src: "/icon-192.png", sizes: "192x192" }],
-      },
-      {
-        name: "Planche",
-        short_name: "Planche",
-        description: "Programme calisthenics planche",
-        url: "/training",
         icons: [{ src: "/icon-192.png", sizes: "192x192" }],
       },
       {

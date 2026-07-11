@@ -2,7 +2,6 @@
 
 import {
   ReactNode,
-  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -12,7 +11,6 @@ import {
   AnimatedNumber,
   Btn,
   Confetti,
-  Dots,
   FloatLabel,
   Icon,
   useLS,
@@ -20,28 +18,21 @@ import {
 } from "@/components/discipline-ui";
 import {
   DEFAULT_FISCAL,
-  DEFAULT_HABITS,
   DEFAULT_MEMBERS,
   DEFAULT_PRICES,
   Fiscal,
   GOAL,
-  Habit,
-  ICON_CHOICES,
-  IconName,
   MonthCounters,
   Prices,
   ServiceEntry,
   computeFinance,
-  dayLabel,
   emptyCounters,
   fmtEur,
   fmtUsd,
   monthKey,
   monthLabel,
-  newHabit,
-  todayKey,
 } from "@/lib/discipline-store";
-import { InstallPrompt, RemindersCard, useReminders } from "@/components/pwa";
+import { InstallPrompt } from "@/components/pwa";
 
 type Breakdown = { key: string; color: string; value: number };
 
@@ -722,380 +713,6 @@ function ServicesCard({
 }
 
 /* ====================================================================== */
-/*  HABIT TIMELINE ROW                                                    */
-/* ====================================================================== */
-function HabitTile({
-  habit,
-  done,
-  onToggle,
-  isCurrent,
-  isPast,
-}: {
-  habit: Habit;
-  done: boolean;
-  onToggle: () => void;
-  isCurrent: boolean;
-  isPast: boolean;
-}) {
-  return (
-    <button
-      onClick={onToggle}
-      style={{
-        position: "relative",
-        display: "grid",
-        gridTemplateColumns: "62px 32px 1fr auto",
-        alignItems: "center",
-        gap: 14,
-        padding: "14px 16px",
-        background: done ? "var(--ink)" : isCurrent ? "var(--orange-50)" : "var(--card)",
-        borderRadius: 16,
-        border: "1.5px solid",
-        borderColor: done ? "var(--ink)" : isCurrent ? "var(--orange)" : "var(--line)",
-        textAlign: "left",
-        transition: "background 220ms var(--ease-out), border-color 220ms, transform 220ms var(--bounce)",
-        width: "100%",
-        color: done ? "white" : "var(--ink)",
-        overflow: "hidden",
-        boxShadow: isCurrent && !done ? "0 0 0 4px rgba(255,106,26,0.12)" : "none",
-      }}
-      onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.985)")}
-      onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
-      onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-      onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.005)")}
-    >
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 1,
-          fontFamily: "Geist Mono, monospace",
-          opacity: done ? 0.6 : isPast && !done ? 0.5 : 1,
-        }}
-      >
-        <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-0.01em", color: done ? "var(--orange-soft)" : isCurrent ? "var(--orange)" : "var(--ink)" }}>
-          {habit.time}
-        </span>
-        <span style={{ fontSize: 10.5, color: done ? "rgba(255,255,255,0.5)" : "var(--ink-3)", letterSpacing: "0.04em" }}>{habit.duration}min</span>
-      </div>
-
-      <div
-        style={{
-          width: 28,
-          height: 28,
-          borderRadius: "50%",
-          background: done ? "var(--orange)" : "transparent",
-          border: "1.8px solid",
-          borderColor: done ? "var(--orange)" : isCurrent ? "var(--orange)" : "var(--line)",
-          display: "grid",
-          placeItems: "center",
-          flexShrink: 0,
-          transition: "background 220ms var(--bounce-strong), border-color 220ms",
-        }}
-      >
-        {done && (
-          <span style={{ animation: "pop-in 360ms var(--bounce-strong)", display: "grid", placeItems: "center" }}>
-            <Icon name="check" size={16} color="white" stroke={2.4} />
-          </span>
-        )}
-      </div>
-
-      <div style={{ minWidth: 0 }}>
-        <div
-          style={{
-            fontSize: 14.5,
-            fontWeight: 500,
-            textDecoration: done ? "line-through" : "none",
-            textDecorationColor: "rgba(255,255,255,0.4)",
-            opacity: done ? 0.7 : isPast && !done ? 0.55 : 1,
-            transition: "opacity 220ms",
-          }}
-        >
-          {habit.label}
-        </div>
-        {isCurrent && !done && (
-          <div
-            style={{
-              fontSize: 11,
-              color: "var(--orange)",
-              fontWeight: 600,
-              marginTop: 2,
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              animation: "nudge 1.5s ease-in-out infinite",
-            }}
-          >
-            ● en cours
-          </div>
-        )}
-      </div>
-
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <span
-          className="mono"
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            color: done ? "var(--orange-soft)" : "var(--orange)",
-            background: done ? "rgba(255,255,255,0.08)" : "var(--orange-50)",
-            padding: "2px 7px",
-            borderRadius: 999,
-            whiteSpace: "nowrap",
-          }}
-        >
-          +{habit.xp} XP
-        </span>
-        <Icon name={habit.icon} size={18} color={done ? "var(--orange-soft)" : isCurrent ? "var(--orange)" : "var(--ink-3)"} />
-      </div>
-    </button>
-  );
-}
-
-/* ====================================================================== */
-/*  STREAK + HEATMAP                                                      */
-/* ====================================================================== */
-function StreakStrip({ history, habits }: { history: Record<string, string[]>; habits: Habit[] }) {
-  const days = useMemo(() => {
-    const arr: { k: string; t: Date; ratio: number }[] = [];
-    const d = new Date();
-    for (let i = 27; i >= 0; i--) {
-      const t = new Date(d);
-      t.setDate(d.getDate() - i);
-      const k = todayKey(t);
-      const checks = history[k] || [];
-      const ratio = habits.length ? checks.length / habits.length : 0;
-      arr.push({ k, t, ratio });
-    }
-    return arr;
-  }, [history, habits.length]);
-
-  const streak = useMemo(() => {
-    let s = 0;
-    const d = new Date();
-    for (let i = 0; i < 365; i++) {
-      const t = new Date(d);
-      t.setDate(d.getDate() - i);
-      const k = todayKey(t);
-      const checks = history[k] || [];
-      if (checks.length >= Math.ceil(habits.length / 2)) s++;
-      else break;
-    }
-    return s;
-  }, [history, habits.length]);
-
-  return (
-    <div
-      style={{
-        background: "var(--card)",
-        borderRadius: 24,
-        padding: 22,
-        border: "1px solid var(--line)",
-        boxShadow: "var(--shadow-sm)",
-        display: "flex",
-        flexDirection: "column",
-        gap: 16,
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div>
-          <div style={{ fontSize: 13, color: "var(--ink-2)", letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 500 }}>Série en cours</div>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 4 }}>
-            <span style={{ fontSize: 42, fontWeight: 600, letterSpacing: "-0.03em", color: "var(--orange)" }}>{streak}</span>
-            <span style={{ fontSize: 16, color: "var(--ink-2)" }}>jour{streak > 1 ? "s" : ""}</span>
-            <Icon name="flame" color="var(--orange)" size={22} />
-          </div>
-        </div>
-        <div style={{ fontSize: 12, color: "var(--ink-3)", textAlign: "right", maxWidth: 160 }}>28 derniers jours</div>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(28, 1fr)", gap: 4 }}>
-        {days.map((d, i) => {
-          const alpha = d.ratio === 0 ? 0.08 : 0.25 + d.ratio * 0.75;
-          return (
-            <div
-              key={d.k}
-              title={`${d.t.toLocaleDateString("fr-FR")} · ${Math.round(d.ratio * 100)}%`}
-              style={{
-                aspectRatio: "1 / 1",
-                background: d.ratio === 0 ? "rgba(26,18,8,0.06)" : `rgba(255,106,26,${alpha})`,
-                borderRadius: 4,
-                animation: `pop-in 400ms ${i * 12}ms var(--bounce) backwards`,
-              }}
-            />
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-/* ====================================================================== */
-/*  HABITS SECTION (schedule view)                                        */
-/* ====================================================================== */
-function HabitsSection({
-  habits,
-  todayChecks,
-  setTodayChecks,
-  onEdit,
-}: {
-  habits: Habit[];
-  todayChecks: string[];
-  setTodayChecks: (next: string[] | ((p: string[]) => string[])) => void;
-  onEdit?: () => void;
-}) {
-  const toggle = (id: string) => {
-    setTodayChecks((prev) => {
-      const has = prev.includes(id);
-      return has ? prev.filter((x) => x !== id) : [...prev, id];
-    });
-  };
-  const done = todayChecks.length;
-  const total = habits.length;
-  const pct = total ? done / total : 0;
-  const tweenPct = useSpring(pct, { stiffness: 110, damping: 20 });
-  const all = done === total && total > 0;
-  const earnedXp = habits.filter((h) => todayChecks.includes(h.id)).reduce((sum, h) => sum + h.xp, 0);
-
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 30000);
-    return () => clearInterval(id);
-  }, []);
-  const nowMins = now.getHours() * 60 + now.getMinutes();
-
-  const items = useMemo(() => {
-    const toMin = (t: string) => {
-      const [h, m] = t.split(":").map(Number);
-      return h * 60 + m;
-    };
-    const sorted = [...habits].sort((a, b) => toMin(a.time) - toMin(b.time));
-    return sorted.map((h) => {
-      const start = toMin(h.time);
-      const end = start + (h.duration || 30);
-      const isCurrent = nowMins >= start && nowMins < end;
-      const isPast = nowMins >= end;
-      return { habit: h, start, end, isCurrent, isPast };
-    });
-  }, [habits, nowMins]);
-
-  const nextIdx = items.findIndex((i) => !i.isPast && !i.isCurrent);
-  const currentIdx = items.findIndex((i) => i.isCurrent);
-  const highlightIdx = currentIdx >= 0 ? currentIdx : nextIdx;
-
-  return (
-    <div
-      style={{
-        background: "var(--card)",
-        borderRadius: 24,
-        padding: 22,
-        border: "1px solid var(--line)",
-        boxShadow: "var(--shadow-sm)",
-        display: "flex",
-        flexDirection: "column",
-        gap: 16,
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-        <div>
-          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600, letterSpacing: "-0.01em" }}>Emploi du temps</h2>
-          <div style={{ fontSize: 12.5, color: "var(--ink-2)", marginTop: 4, textTransform: "capitalize" }}>
-            {dayLabel()} · {now.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
-          </div>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {onEdit && (
-            <button
-              onClick={onEdit}
-              title="Modifier l'emploi du temps"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "6px 12px",
-                background: "var(--bg-2)",
-                color: "var(--ink-2)",
-                borderRadius: 999,
-                fontSize: 12.5,
-                fontWeight: 500,
-                border: "1px solid var(--line)",
-                transition: "transform 200ms var(--bounce), color 160ms",
-              }}
-              onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.94)")}
-              onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
-              onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-            >
-              <Icon name="calendar" size={14} />
-              Éditer
-            </button>
-          )}
-          <span
-            className="mono"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
-              padding: "6px 11px",
-              background: "var(--orange-50)",
-              color: "var(--orange)",
-              borderRadius: 999,
-              fontSize: 12.5,
-              fontWeight: 700,
-            }}
-          >
-            <Icon name="flame" size={13} color="var(--orange)" />+{earnedXp} XP
-          </span>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              padding: "6px 12px 6px 8px",
-              background: all ? "var(--green)" : "var(--orange-50)",
-              color: all ? "white" : "var(--orange)",
-              borderRadius: 999,
-              fontFamily: "Geist Mono, monospace",
-              fontSize: 13,
-              fontWeight: 600,
-              transition: "background 280ms var(--ease-out), color 280ms",
-            }}
-          >
-            <div style={{ position: "relative", width: 22, height: 22 }}>
-              <svg width="22" height="22" style={{ transform: "rotate(-90deg)" }}>
-                <circle cx="11" cy="11" r="9" stroke="rgba(255,106,26,0.18)" strokeWidth="3" fill="none" />
-                <circle
-                  cx="11"
-                  cy="11"
-                  r="9"
-                  stroke={all ? "white" : "var(--orange)"}
-                  strokeWidth="3"
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeDasharray={`${tweenPct * (2 * Math.PI * 9)} ${2 * Math.PI * 9}`}
-                  style={{ transition: "stroke-dasharray 500ms var(--bounce)" }}
-                />
-              </svg>
-            </div>
-            {done}/{total}
-          </div>
-        </div>
-      </div>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, position: "relative" }}>
-        {items.map((it, i) => (
-          <div key={it.habit.id} style={{ animation: `fade-up 400ms ${i * 40}ms var(--ease-out) backwards` }}>
-            <HabitTile
-              habit={it.habit}
-              done={todayChecks.includes(it.habit.id)}
-              onToggle={() => toggle(it.habit.id)}
-              isCurrent={i === highlightIdx && !todayChecks.includes(it.habit.id)}
-              isPast={it.isPast}
-            />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ====================================================================== */
 /*  SETTINGS DRAWER                                                       */
 /* ====================================================================== */
 function SectionLabel({ children }: { children: ReactNode }) {
@@ -1148,6 +765,8 @@ function Settings({
   setFiscal,
   goalMode,
   setGoalMode,
+  goalEur,
+  setGoalEur,
 }: {
   open: boolean;
   onClose: () => void;
@@ -1159,6 +778,8 @@ function Settings({
   setFiscal: (v: Fiscal | ((p: Fiscal) => Fiscal)) => void;
   goalMode: "net" | "brut";
   setGoalMode: (v: "net" | "brut") => void;
+  goalEur: number;
+  setGoalEur: (v: number) => void;
 }) {
   if (!open) return null;
   return (
@@ -1196,7 +817,10 @@ function Settings({
           </button>
         </div>
 
-        <SectionLabel>Objectif</SectionLabel>
+        <SectionLabel>Objectif mensuel</SectionLabel>
+        <div style={{ marginBottom: 14 }}>
+          <Field label="Montant à atteindre / mois" value={goalEur} onChange={(v) => setGoalEur(v)} step={500} suffix="€" />
+        </div>
         <div style={{ display: "flex", gap: 6, background: "var(--bg-2)", padding: 4, borderRadius: 12, marginBottom: 14 }}>
           {[
             { id: "net" as const, label: "Net en poche" },
@@ -1404,170 +1028,6 @@ function PaceWidget({ displayTotal, goal, modeLabel }: { displayTotal: number; g
 }
 
 /* ====================================================================== */
-/*  AI COACH                                                              */
-/* ====================================================================== */
-interface CoachContext {
-  displayTotal: number;
-  goal: number;
-  remaining: number;
-  daysLeft: number;
-  doneCount: number;
-  totalCount: number;
-  onPace: boolean;
-  modeLabel: string;
-}
-
-const QUICK_ACTIONS: { focus: string; label: string }[] = [
-  { focus: "hook", label: "💡 5 idées de hook" },
-  { focus: "script", label: "✍️ Script court" },
-  { focus: "pitch", label: "📩 Pitch marque" },
-];
-
-function AICoach({ context }: { context: CoachContext }) {
-  const [message, setMessage] = useLS<{ date: string; text: string } | null>("disc.aimsg", null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const tk = todayKey();
-  const stale = !message || message.date !== tk;
-
-  const generate = useCallback(
-    async (focus?: string) => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch("/api/coach", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ context, focus }),
-        });
-        if (!res.ok) throw new Error("bad status");
-        const data = await res.json();
-        if (!data?.text) throw new Error("empty");
-        setMessage({ date: tk, text: data.text.trim() });
-      } catch {
-        setError("Impossible de générer le message. Réessaie.");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [context, tk, setMessage],
-  );
-
-  useEffect(() => {
-    // Fetch the daily coach message once per day on mount / day change.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (stale && !loading) generate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stale]);
-
-  return (
-    <div
-      style={{
-        background: "linear-gradient(135deg, #FFF1E2 0%, #FFE0C7 100%)",
-        border: "1px solid var(--orange-100)",
-        borderRadius: 24,
-        padding: 22,
-        boxShadow: "var(--shadow-sm)",
-        display: "flex",
-        flexDirection: "column",
-        gap: 14,
-        position: "relative",
-        overflow: "hidden",
-        animation: "fade-up 600ms var(--ease-out) 120ms backwards",
-      }}
-    >
-      <div style={{ position: "absolute", top: -30, right: -30, width: 140, height: 140, borderRadius: "50%", background: "radial-gradient(closest-side, rgba(255,106,26,0.25), transparent 70%)", pointerEvents: "none" }} />
-
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, position: "relative" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: "50%",
-              background: "var(--orange)",
-              color: "white",
-              display: "grid",
-              placeItems: "center",
-              boxShadow: "0 6px 16px rgba(255,106,26,0.3)",
-              animation: loading ? "pulse-ring 1.4s ease-in-out infinite" : "none",
-            }}
-          >
-            <Icon name="spark" size={16} />
-          </div>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em" }}>Ton coach du jour</div>
-            <div style={{ fontSize: 11, color: "var(--ink-2)" }}>{loading ? "Réflexion en cours…" : "Mise à jour quotidienne"}</div>
-          </div>
-        </div>
-        <button
-          onClick={() => generate()}
-          disabled={loading}
-          title="Régénérer"
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: "50%",
-            background: "white",
-            border: "1px solid var(--line)",
-            display: "grid",
-            placeItems: "center",
-            transition: "transform 220ms var(--bounce)",
-            opacity: loading ? 0.5 : 1,
-          }}
-          onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.88) rotate(-180deg)")}
-          onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1) rotate(0deg)")}
-          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1) rotate(0deg)")}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
-            <path d="M3 3v5h5" />
-          </svg>
-        </button>
-      </div>
-
-      <div style={{ fontSize: 14.5, lineHeight: 1.55, color: "var(--ink)", position: "relative", minHeight: 60 }}>
-        {loading && !message && (
-          <div style={{ display: "flex", gap: 8, alignItems: "center", color: "var(--ink-2)" }}>
-            <Dots />
-            <span style={{ fontSize: 13 }}>Je prépare ton brief…</span>
-          </div>
-        )}
-        {error && <div style={{ fontSize: 13, color: "var(--ink-2)" }}>{error}</div>}
-        {message?.text && <span style={{ animation: "fade-up 600ms var(--ease-out)" }}>{message.text}</span>}
-      </div>
-
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-        {QUICK_ACTIONS.map((a) => (
-          <button
-            key={a.focus}
-            onClick={() => generate(a.focus)}
-            disabled={loading}
-            style={{
-              fontSize: 12,
-              fontWeight: 500,
-              padding: "7px 12px",
-              borderRadius: 999,
-              background: "white",
-              border: "1px solid var(--orange-100)",
-              color: "var(--orange)",
-              transition: "transform 200ms var(--bounce), background 160ms",
-              opacity: loading ? 0.5 : 1,
-            }}
-            onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.94)")}
-            onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
-            onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-          >
-            {a.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ====================================================================== */
 /*  NEED TILE                                                             */
 /* ====================================================================== */
 function NeedTile({ big, label, sub }: { big: number; label: string; sub: string }) {
@@ -1578,223 +1038,6 @@ function NeedTile({ big, label, sub }: { big: number; label: string; sub: string
       </div>
       <div style={{ fontSize: 12.5, color: "var(--ink-2)", marginTop: 6 }}>{label}</div>
       <div style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 2, fontFamily: "Geist Mono, monospace" }}>{sub}</div>
-    </div>
-  );
-}
-
-/* ====================================================================== */
-/*  SCHEDULE EDITOR                                                       */
-/* ====================================================================== */
-function HabitEditorRow({
-  habit,
-  onChange,
-  onRemove,
-}: {
-  habit: Habit;
-  onChange: (next: Habit) => void;
-  onRemove: () => void;
-}) {
-  const inputBase: React.CSSProperties = {
-    background: "var(--bg-2)",
-    border: "1px solid transparent",
-    borderRadius: 10,
-    padding: "9px 11px",
-    fontSize: 13.5,
-    color: "var(--ink)",
-    outline: "none",
-  };
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 10,
-        padding: 14,
-        background: "var(--card)",
-        border: "1px solid var(--line)",
-        borderRadius: 16,
-      }}
-    >
-      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        <input
-          type="time"
-          value={habit.time}
-          onChange={(e) => onChange({ ...habit, time: e.target.value })}
-          className="mono"
-          style={{ ...inputBase, width: 110, fontWeight: 600 }}
-        />
-        <input
-          value={habit.label}
-          onChange={(e) => onChange({ ...habit, label: e.target.value })}
-          placeholder="Nom de la tâche"
-          style={{ ...inputBase, flex: 1, minWidth: 0 }}
-        />
-        <button
-          onClick={onRemove}
-          title="Supprimer"
-          style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--bg-2)", border: "1px solid var(--line)", display: "grid", placeItems: "center", color: "var(--ink-3)", flexShrink: 0 }}
-        >
-          <Icon name="x" size={14} />
-        </button>
-      </div>
-
-      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-        <div style={{ display: "flex", gap: 4, background: "var(--bg-2)", borderRadius: 10, padding: 4 }}>
-          {ICON_CHOICES.map((ic) => {
-            const sel = habit.icon === ic;
-            return (
-              <button
-                key={ic}
-                onClick={() => onChange({ ...habit, icon: ic as IconName })}
-                title={ic}
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 8,
-                  display: "grid",
-                  placeItems: "center",
-                  background: sel ? "var(--orange)" : "transparent",
-                  color: sel ? "white" : "var(--ink-3)",
-                  transition: "all 160ms",
-                }}
-              >
-                <Icon name={ic} size={16} color={sel ? "white" : "var(--ink-3)"} />
-              </button>
-            );
-          })}
-        </div>
-        <label style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--bg-2)", borderRadius: 10, padding: "7px 10px" }}>
-          <input
-            type="number"
-            min={5}
-            step={5}
-            value={habit.duration}
-            onChange={(e) => onChange({ ...habit, duration: Math.max(5, Number(e.target.value) || 0) })}
-            className="mono"
-            style={{ width: 42, background: "transparent", border: "none", outline: "none", fontSize: 13.5, fontWeight: 600, color: "var(--ink)" }}
-          />
-          <span style={{ fontSize: 12, color: "var(--ink-3)" }}>min</span>
-        </label>
-        <label style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--bg-2)", borderRadius: 10, padding: "7px 10px" }}>
-          <input
-            type="number"
-            min={0}
-            step={5}
-            value={habit.xp}
-            onChange={(e) => onChange({ ...habit, xp: Math.max(0, Number(e.target.value) || 0) })}
-            className="mono"
-            style={{ width: 42, background: "transparent", border: "none", outline: "none", fontSize: 13.5, fontWeight: 600, color: "var(--orange)" }}
-          />
-          <span style={{ fontSize: 12, color: "var(--ink-3)" }}>XP</span>
-        </label>
-        <button
-          onClick={() => onChange({ ...habit, remind: habit.remind === false })}
-          title="Rappel sur l'écran verrouillé"
-          style={{
-            marginLeft: "auto",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "7px 12px",
-            borderRadius: 999,
-            fontSize: 12.5,
-            fontWeight: 500,
-            background: habit.remind === false ? "var(--bg-2)" : "var(--orange-50)",
-            color: habit.remind === false ? "var(--ink-3)" : "var(--orange)",
-            border: "1px solid transparent",
-          }}
-        >
-          {habit.remind === false ? "🔕 Sans rappel" : "🔔 Rappel"}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function ScheduleEditor({
-  open,
-  onClose,
-  habits,
-  setHabits,
-}: {
-  open: boolean;
-  onClose: () => void;
-  habits: Habit[];
-  setHabits: (v: Habit[] | ((p: Habit[]) => Habit[])) => void;
-}) {
-  if (!open) return null;
-  const sorted = [...habits].sort((a, b) => a.time.localeCompare(b.time));
-  return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 80,
-        background: "rgba(26,18,8,0.32)",
-        display: "grid",
-        placeItems: "center",
-        animation: "fade-up 240ms var(--ease-out)",
-        overflow: "auto",
-        padding: 20,
-      }}
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: "var(--card)",
-          width: "min(560px, 94vw)",
-          borderRadius: 24,
-          padding: 28,
-          boxShadow: "var(--shadow-lg)",
-          animation: "pop-in 360ms var(--bounce)",
-          maxHeight: "92vh",
-          overflowY: "auto",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18, position: "sticky", top: -28, background: "var(--card)", paddingTop: 4, paddingBottom: 12, zIndex: 2 }}>
-          <div>
-            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600, letterSpacing: "-0.01em" }}>Mon emploi du temps</h3>
-            <div style={{ fontSize: 12, color: "var(--ink-2)", marginTop: 2 }}>{habits.length} tâche{habits.length > 1 ? "s" : ""} · trié par heure</div>
-          </div>
-          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--bg-2)", display: "grid", placeItems: "center" }}>
-            <Icon name="x" size={16} />
-          </button>
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {sorted.map((h) => (
-            <HabitEditorRow
-              key={h.id}
-              habit={h}
-              onChange={(next) => setHabits((prev) => prev.map((x) => (x.id === h.id ? next : x)))}
-              onRemove={() => setHabits((prev) => prev.filter((x) => x.id !== h.id))}
-            />
-          ))}
-          {habits.length === 0 && (
-            <div style={{ fontSize: 13, color: "var(--ink-3)", textAlign: "center", padding: "24px 0" }}>
-              Aucune tâche. Ajoute ta première ci-dessous.
-            </div>
-          )}
-        </div>
-
-        <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
-          <Btn kind="primary" size="md" icon="plus" onClick={() => setHabits((prev) => [...prev, newHabit()])}>
-            Ajouter une tâche
-          </Btn>
-          <Btn
-            kind="ghost"
-            size="md"
-            onClick={() => {
-              if (confirm("Revenir à l'emploi du temps par défaut ? Tes tâches personnalisées seront remplacées.")) {
-                setHabits(DEFAULT_HABITS.map((h) => ({ ...h })));
-              }
-            }}
-          >
-            Réinitialiser
-          </Btn>
-        </div>
-      </div>
     </div>
   );
 }
@@ -1830,6 +1073,8 @@ function DashboardInner() {
   const [members, setMembers] = useLS<number>("disc.members", DEFAULT_MEMBERS);
   const [fiscal, setFiscal] = useLS<Fiscal>("disc.fiscal", DEFAULT_FISCAL);
   const [goalMode, setGoalMode] = useLS<"net" | "brut">("disc.goalMode", "net");
+  // Monthly income target — editable in settings, defaults to 10 000 €.
+  const [goalEur, setGoalEur] = useLS<number>("disc.goalEur", GOAL);
 
   const [counters, setCounters] = useLS<Record<string, MonthCounters>>("disc.counters", {});
   const cur: MonthCounters = { ...emptyCounters(), ...(counters[mk] ?? {}) };
@@ -1841,32 +1086,21 @@ function DashboardInner() {
   const addShort = () => setCur({ shortVids: cur.shortVids + 1 });
   const addLong = () => setCur({ longVids: cur.longVids + 1 });
 
-  const [habits, setHabits] = useLS<Habit[]>("disc.habits.v1", DEFAULT_HABITS);
-  const reminders = useReminders(habits);
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [history, setHistory] = useLS<Record<string, string[]>>("disc.history", {});
-  const tk = todayKey();
-  const todayChecks = history[tk] || [];
-  const setTodayChecks = (next: string[] | ((p: string[]) => string[])) => {
-    const value = typeof next === "function" ? (next as (p: string[]) => string[])(todayChecks) : next;
-    setHistory((prev) => ({ ...prev, [tk]: value }));
-  };
-
   const fin = computeFinance({ prices, members, fiscal, counters: cur });
   const { skoolGrossUsd, skoolGrossEur, skoolPlatformEur, brandGrossEur, servicesEur, caBrut, urssafEur, impotEur, netEur } = fin;
 
   const displayTotal = goalMode === "net" ? Math.max(0, netEur) : caBrut;
 
   const [confetti, setConfetti] = useState(false);
-  const prevReachedRef = useRef(displayTotal >= GOAL);
+  const prevReachedRef = useRef(displayTotal >= goalEur);
   useEffect(() => {
-    const reached = displayTotal >= GOAL;
+    const reached = displayTotal >= goalEur;
     if (reached && !prevReachedRef.current) {
       setConfetti(true);
       setTimeout(() => setConfetti(false), 1800);
     }
     prevReachedRef.current = reached;
-  }, [displayTotal]);
+  }, [displayTotal, goalEur]);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -1877,7 +1111,7 @@ function DashboardInner() {
     { key: "services", color: "#FF9A3C", value: servicesEur * (goalMode === "net" ? netRatio : 1) },
   ];
 
-  const remaining = Math.max(0, GOAL - displayTotal);
+  const remaining = Math.max(0, goalEur - displayTotal);
   const eurPerShort = goalMode === "net" ? prices.shortVid * netRatio : prices.shortVid;
   const eurPerLong = goalMode === "net" ? prices.longVid * netRatio : prices.longVid;
   const eurPerMember = goalMode === "net" ? prices.skoolUsd * prices.fx * netRatio : prices.skoolUsd * prices.fx;
@@ -1886,8 +1120,6 @@ function DashboardInner() {
   const longsNeeded = eurPerLong > 0 ? Math.ceil(remaining / eurPerLong) : 0;
   const membersNeeded = eurPerMember > 0 ? Math.ceil(remaining / eurPerMember) : 0;
 
-  const daysLeft = Math.max(1, new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate() + 1);
-  const onPace = displayTotal >= (GOAL / new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()) * new Date().getDate();
   const modeLabel = goalMode === "net" ? "Net en poche" : "CA brut";
 
   return (
@@ -1905,7 +1137,7 @@ function DashboardInner() {
           </div>
           <div>
             <div style={{ fontSize: 17, fontWeight: 600, letterSpacing: "-0.02em" }}>Discipline</div>
-            <div style={{ fontSize: 12, color: "var(--ink-2)" }}>Vers 10 000 € {goalMode === "net" ? "net" : "brut"} / mois</div>
+            <div style={{ fontSize: 12, color: "var(--ink-2)" }}>Vers {fmtEur(goalEur)} {goalMode === "net" ? "net" : "brut"} / mois</div>
           </div>
         </div>
 
@@ -1967,7 +1199,7 @@ function DashboardInner() {
         style={{ maxWidth: 1240, margin: "0 auto", padding: "16px 28px 28px", display: "grid", gridTemplateColumns: "minmax(380px, 460px) 1fr", gap: 36, alignItems: "center" }}
       >
         <div style={{ display: "grid", placeItems: "center" }}>
-          <RevenueRing total={displayTotal} goal={GOAL} breakdown={breakdown} modeLabel={modeLabel} monthDate={viewMonth} />
+          <RevenueRing total={displayTotal} goal={goalEur} breakdown={breakdown} modeLabel={modeLabel} monthDate={viewMonth} />
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 18, paddingLeft: 8 }}>
           <div>
@@ -2081,28 +1313,8 @@ function DashboardInner() {
         <ServicesCard services={cur.services} total={servicesEur} onAdd={addService} onRemove={removeService} />
       </section>
 
-      <section className="coach-row" style={{ maxWidth: 1240, margin: "0 auto", padding: "22px 28px 22px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
-        <PaceWidget displayTotal={displayTotal} goal={GOAL} modeLabel={modeLabel} />
-        <AICoach
-          context={{
-            displayTotal,
-            goal: GOAL,
-            remaining,
-            daysLeft,
-            doneCount: todayChecks.length,
-            totalCount: habits.length,
-            onPace,
-            modeLabel,
-          }}
-        />
-      </section>
-
-      <section className="habits-row" style={{ maxWidth: 1240, margin: "0 auto", padding: "0 28px 60px", display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 18 }}>
-        <HabitsSection habits={habits} todayChecks={todayChecks} setTodayChecks={setTodayChecks} onEdit={() => setEditorOpen(true)} />
-        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <StreakStrip history={history} habits={habits} />
-          <RemindersCard api={reminders} />
-        </div>
+      <section style={{ maxWidth: 1240, margin: "0 auto", padding: "22px 28px 60px" }}>
+        <PaceWidget displayTotal={displayTotal} goal={goalEur} modeLabel={modeLabel} />
       </section>
 
       <footer style={{ maxWidth: 1240, margin: "0 auto", padding: "0 28px 40px", fontSize: 12, color: "var(--ink-3)", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -2111,8 +1323,6 @@ function DashboardInner() {
         <span style={{ color: "var(--ink-3)" }}>·</span>
         <a href="/install" style={{ color: "var(--orange)", textDecoration: "none", fontWeight: 600 }}>Sync &amp; backup</a>
       </footer>
-
-      <ScheduleEditor open={editorOpen} onClose={() => setEditorOpen(false)} habits={habits} setHabits={setHabits} />
 
       <Settings
         open={settingsOpen}
@@ -2125,6 +1335,8 @@ function DashboardInner() {
         setFiscal={setFiscal}
         goalMode={goalMode}
         setGoalMode={setGoalMode}
+        goalEur={goalEur}
+        setGoalEur={setGoalEur}
       />
 
       <style>{`
