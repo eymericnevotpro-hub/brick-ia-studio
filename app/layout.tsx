@@ -22,6 +22,9 @@ export const viewport: Viewport = {
   themeColor: "#FF6A1A",
   width: "device-width",
   initialScale: 1,
+  // Lock zoom so the PWA feels native — no accidental pinch-zoom.
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: "cover",
 };
 
