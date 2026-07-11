@@ -90,7 +90,7 @@ function RevenueRing({
 
   const reached = shownTotal >= goal;
   const accent = view === "partner" ? PARTNER_COLOR : "var(--orange)";
-  const label = view === "both" ? "Total commun" : view === "me" ? "Mes revenus" : "Revenus de Suzy";
+  const label = view === "both" ? "Total commun" : view === "me" ? "Revenus de Brick" : "Revenus de Suzy";
 
   return (
     <div style={{ position: "relative", width: size, height: size }}>
@@ -853,8 +853,9 @@ function PartnerLine({
         <input
           value={label}
           onChange={(e) => onLabel(e.target.value)}
-          placeholder="Libellé"
-          style={{ flex: 1, minWidth: 0, background: "transparent", border: "none", outline: "none", fontSize: 13, fontWeight: 600, color: "var(--ink)" }}
+          placeholder="Nom (ex : Salaire, Ménage…)"
+          title="Clique pour renommer"
+          style={{ flex: 1, minWidth: 0, background: "white", border: "1px solid var(--line)", borderRadius: 8, padding: "6px 10px", outline: "none", fontSize: 13, fontWeight: 600, color: "var(--ink)" }}
         />
         <div className="mono" style={{ fontSize: 16, fontWeight: 700, color: PARTNER_COLOR }}>{fmtEur(value)}</div>
       </div>
@@ -865,7 +866,7 @@ function PartnerLine({
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submit(1)}
-            placeholder="78"
+            placeholder="Montant"
             style={{ flex: 1, width: "100%", background: "transparent", border: "none", outline: "none", fontSize: 14, fontFamily: "Geist Mono, monospace", fontWeight: 600, color: "var(--ink)" }}
           />
           <span style={{ fontSize: 12, color: "var(--ink-2)" }}>€</span>
