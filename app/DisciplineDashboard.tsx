@@ -975,6 +975,56 @@ function Field({
   );
 }
 
+function FixedExpensesEditor({
+  items,
+  setItems,
+  placeholder,
+}: {
+  items: FixedExpense[];
+  setItems: (v: FixedExpense[] | ((p: FixedExpense[]) => FixedExpense[])) => void;
+  placeholder: string;
+}) {
+  return (
+    <>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 6 }}>
+        {items.map((fe) => (
+          <div key={fe.id} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input
+              value={fe.label}
+              onChange={(e) => setItems((prev) => prev.map((x) => (x.id === fe.id ? { ...x, label: e.target.value } : x)))}
+              placeholder={placeholder}
+              style={{ flex: 1, minWidth: 0, background: "var(--bg-2)", border: "1px solid transparent", borderRadius: 10, padding: "9px 12px", fontSize: 13.5, outline: "none", color: "var(--ink)" }}
+            />
+            <div style={{ display: "flex", alignItems: "center", background: "var(--bg-2)", borderRadius: 10, padding: "9px 12px", width: 110 }}>
+              <input
+                type="number"
+                min={0}
+                value={fe.amount}
+                onChange={(e) => setItems((prev) => prev.map((x) => (x.id === fe.id ? { ...x, amount: Math.max(0, Number(e.target.value) || 0) } : x)))}
+                style={{ flex: 1, width: "100%", background: "transparent", border: "none", outline: "none", fontSize: 14, fontFamily: "Geist Mono, monospace", fontWeight: 600, color: "var(--ink)" }}
+              />
+              <span style={{ fontSize: 12, color: "var(--ink-2)" }}>€</span>
+            </div>
+            <button
+              onClick={() => setItems((prev) => prev.filter((x) => x.id !== fe.id))}
+              title="Supprimer"
+              style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(196,74,0,0.08)", color: "#C44A00", fontSize: 14, fontWeight: 700, display: "grid", placeItems: "center", flexShrink: 0 }}
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+      </div>
+      <button
+        onClick={() => setItems((prev) => [...prev, { id: crypto.randomUUID(), label: "", amount: 0 }])}
+        style={{ marginBottom: 18, padding: "8px 14px", borderRadius: 999, background: "var(--orange-50)", color: "var(--orange)", fontSize: 13, fontWeight: 600, border: "1px solid var(--orange-100)" }}
+      >
+        + Ajouter un frais fixe
+      </button>
+    </>
+  );
+}
+
 function Settings({
   open,
   onClose,
@@ -992,6 +1042,8 @@ function Settings({
   setFixedExpenses,
   partnerFiscal,
   setPartnerFiscal,
+  partnerFixed,
+  setPartnerFixed,
 }: {
   open: boolean;
   onClose: () => void;
@@ -1009,6 +1061,8 @@ function Settings({
   setFixedExpenses: (v: FixedExpense[] | ((p: FixedExpense[]) => FixedExpense[])) => void;
   partnerFiscal: Fiscal;
   setPartnerFiscal: (v: Fiscal | ((p: Fiscal) => Fiscal)) => void;
+  partnerFixed: FixedExpense[];
+  setPartnerFixed: (v: FixedExpense[] | ((p: FixedExpense[]) => FixedExpense[])) => void;
 }) {
   if (!open) return null;
   return (
@@ -1089,41 +1143,7 @@ function Settings({
         </div>
 
         <SectionLabel>Frais fixes mensuels (€)</SectionLabel>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 6 }}>
-          {fixedExpenses.map((fe) => (
-            <div key={fe.id} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <input
-                value={fe.label}
-                onChange={(e) => setFixedExpenses((prev) => prev.map((x) => (x.id === fe.id ? { ...x, label: e.target.value } : x)))}
-                placeholder="Ex : abonnement Adobe"
-                style={{ flex: 1, minWidth: 0, background: "var(--bg-2)", border: "1px solid transparent", borderRadius: 10, padding: "9px 12px", fontSize: 13.5, outline: "none", color: "var(--ink)" }}
-              />
-              <div style={{ display: "flex", alignItems: "center", background: "var(--bg-2)", borderRadius: 10, padding: "9px 12px", width: 110 }}>
-                <input
-                  type="number"
-                  min={0}
-                  value={fe.amount}
-                  onChange={(e) => setFixedExpenses((prev) => prev.map((x) => (x.id === fe.id ? { ...x, amount: Math.max(0, Number(e.target.value) || 0) } : x)))}
-                  style={{ flex: 1, width: "100%", background: "transparent", border: "none", outline: "none", fontSize: 14, fontFamily: "Geist Mono, monospace", fontWeight: 600, color: "var(--ink)" }}
-                />
-                <span style={{ fontSize: 12, color: "var(--ink-2)" }}>€</span>
-              </div>
-              <button
-                onClick={() => setFixedExpenses((prev) => prev.filter((x) => x.id !== fe.id))}
-                title="Supprimer"
-                style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(196,74,0,0.08)", color: "#C44A00", fontSize: 14, fontWeight: 700, display: "grid", placeItems: "center", flexShrink: 0 }}
-              >
-                ✕
-              </button>
-            </div>
-          ))}
-        </div>
-        <button
-          onClick={() => setFixedExpenses((prev) => [...prev, { id: crypto.randomUUID(), label: "", amount: 0 }])}
-          style={{ marginBottom: 18, padding: "8px 14px", borderRadius: 999, background: "var(--orange-50)", color: "var(--orange)", fontSize: 13, fontWeight: 600, border: "1px solid var(--orange-100)" }}
-        >
-          + Ajouter un frais fixe
-        </button>
+        <FixedExpensesEditor items={fixedExpenses} setItems={setFixedExpenses} placeholder="Ex : abonnement Adobe" />
 
         <SectionLabel>Vidéos marques</SectionLabel>
         <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 18 }}>
@@ -1147,6 +1167,10 @@ function Settings({
         <div style={{ fontSize: 11.5, color: "var(--ink-3)", marginTop: 10, lineHeight: 1.5 }}>
           Les revenus de Suzy sont saisis en brut. En mode « Net », on déduit ces {(partnerFiscal.urssaf + partnerFiscal.impot).toFixed(1)}%.
         </div>
+
+        <div style={{ height: 16 }} />
+        <SectionLabel>Suzy — frais fixes mensuels (€)</SectionLabel>
+        <FixedExpensesEditor items={partnerFixed} setItems={setPartnerFixed} placeholder="Ex : téléphone, transport…" />
       </div>
     </div>
   );
@@ -1231,6 +1255,7 @@ function PartnerChargesStrip({
   impotEur,
   urssafPct,
   impotPct,
+  fixedEur,
   netEur,
 }: {
   caBrut: number;
@@ -1238,8 +1263,12 @@ function PartnerChargesStrip({
   impotEur: number;
   urssafPct: number;
   impotPct: number;
+  fixedEur: number;
   netEur: number;
 }) {
+  const cols = fixedEur > 0
+    ? "1fr auto 1fr auto 1fr auto 1fr auto 1fr"
+    : "1fr auto 1fr auto 1fr auto 1fr";
   return (
     <div
       className="charges"
@@ -1249,7 +1278,7 @@ function PartnerChargesStrip({
         borderRadius: 18,
         padding: "14px 18px",
         display: "grid",
-        gridTemplateColumns: "1fr auto 1fr auto 1fr auto 1fr",
+        gridTemplateColumns: cols,
         alignItems: "center",
         gap: 12,
         boxShadow: "var(--shadow-sm)",
@@ -1261,8 +1290,10 @@ function PartnerChargesStrip({
       <ChargeCell label={`URSSAF · ${urssafPct}%`} value={urssafEur} color="var(--ink-2)" small />
       <ChargeSep>−</ChargeSep>
       <ChargeCell label={`Impôt · ${impotPct}%`} value={impotEur} color="var(--ink-2)" small />
+      {fixedEur > 0 && <ChargeSep>−</ChargeSep>}
+      {fixedEur > 0 && <ChargeCell label="Frais fixes" value={fixedEur} color="var(--ink-2)" small />}
       <ChargeSep>=</ChargeSep>
-      <ChargeCell label="Net Suzy" value={netEur} color={PARTNER_COLOR} />
+      <ChargeCell label="Net Suzy" value={netEur} color={netEur < 0 ? "#C44A00" : PARTNER_COLOR} />
     </div>
   );
 }
@@ -1441,6 +1472,7 @@ function DashboardInner() {
   // Partner income line labels + which revenues the ring shows.
   const [partnerLabels, setPartnerLabels] = useLS<string[]>("disc.partnerLabels", DEFAULT_PARTNER_LABELS);
   const [partnerFiscal, setPartnerFiscal] = useLS<Fiscal>("disc.partnerFiscal", DEFAULT_PARTNER_FISCAL);
+  const [partnerFixed, setPartnerFixed] = useLS<FixedExpense[]>("disc.partnerFixed", []);
   const [revenueView, setRevenueView] = useLS<RevenueView>("disc.revenueView", "both");
 
   const [counters, setCounters] = useLS<Record<string, MonthCounters>>("disc.counters", {});
@@ -1485,7 +1517,8 @@ function DashboardInner() {
 
   // Theoretical monthly savings = everyone's net after ALL charges and fixed
   // costs (rent, food…). Always computed from net, whatever the view toggle.
-  const suzyNet = partnerRaw * partnerNetRatio;
+  const partnerFixedEur = partnerFixed.reduce((s, e) => s + (e.amount || 0), 0);
+  const suzyNet = partnerRaw * partnerNetRatio - partnerFixedEur;
   const savingsPotential = netEur + suzyNet;
 
   const cycleView = (dir: -1 | 1) => {
@@ -1633,6 +1666,7 @@ function DashboardInner() {
               impotEur={partnerRaw * (partnerFiscal.impot / 100)}
               urssafPct={partnerFiscal.urssaf}
               impotPct={partnerFiscal.impot}
+              fixedEur={partnerFixedEur}
               netEur={suzyNet}
             />
           )}
@@ -1737,6 +1771,8 @@ function DashboardInner() {
         setFixedExpenses={setFixedExpenses}
         partnerFiscal={partnerFiscal}
         setPartnerFiscal={setPartnerFiscal}
+        partnerFixed={partnerFixed}
+        setPartnerFixed={setPartnerFixed}
       />
 
       <style>{`
