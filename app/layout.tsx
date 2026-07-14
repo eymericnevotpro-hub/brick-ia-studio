@@ -5,7 +5,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Bproductive — Objectifs & habitudes",
   description:
-    "Bproductive : discipline, objectifs financiers, programme planche et générateur de miniature 9:16 — tout en local sur ton appareil.",
+    "Bproductive : discipline, budget mensuel et objectifs financiers — tout en local sur ton appareil.",
   applicationName: "Bproductive",
   appleWebApp: {
     capable: true,

@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Bproductive — Objectifs & habitudes",
     short_name: "Bproductive",
     description:
-      "Bproductive : discipline, objectifs financiers et générateur de miniature 9:16 — tout en local sur ton appareil.",
+      "Bproductive : discipline, budget mensuel et objectifs financiers — tout en local sur ton appareil.",
     id: "/",
     start_url: "/",
     scope: "/",
@@ -35,17 +35,17 @@ export default function manifest(): MetadataRoute.Manifest {
         icons: [{ src: "/icon-192.png", sizes: "192x192" }],
       },
       {
+        name: "Budget",
+        short_name: "Budget",
+        description: "Dépenses du mois par catégorie",
+        url: "/budget",
+        icons: [{ src: "/icon-192.png", sizes: "192x192" }],
+      },
+      {
         name: "Objectifs",
         short_name: "Objectifs",
         description: "Cagnotte et rêves chiffrés",
         url: "/goals",
-        icons: [{ src: "/icon-192.png", sizes: "192x192" }],
-      },
-      {
-        name: "Miniature",
-        short_name: "Miniature",
-        description: "Générateur d'overlay 9:16",
-        url: "/miniature",
         icons: [{ src: "/icon-192.png", sizes: "192x192" }],
       },
     ],
