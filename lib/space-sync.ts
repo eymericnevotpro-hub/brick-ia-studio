@@ -34,19 +34,27 @@ export function useSpaceSync() {
   const keyRef = useRef<string | null>(null);
   const lastHashRef = useRef<string>("");
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Becomes true only after the first cloud pull, so we never push stale data
+  // (which would clobber a fresher value another device already pushed).
+  const readyRef = useRef(false);
 
   /* ── restore stored code on mount ─────────────────────────────────── */
   useEffect(() => {
     if (typeof window === "undefined" || !configured) return;
     installLocalStorageWatcher();
     const stored = window.localStorage.getItem(CODE_KEY);
-    if (stored) {
-      hashCode(stored).then((k) => {
-        keyRef.current = k;
-        setCode(stored);
-        setStatus("idle");
-      });
-    }
+    if (!stored) return;
+    let cancelled = false;
+    hashCode(stored).then(async (k) => {
+      if (cancelled) return;
+      keyRef.current = k;
+      setCode(stored);
+      setStatus("idle");
+      // Immediately sync from the cloud BEFORE the user can edit stale data.
+      try { await pull(); } finally { readyRef.current = true; }
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [configured]);
 
   /* ── pull ─────────────────────────────────────────────────────────── */
@@ -88,6 +96,9 @@ export function useSpaceSync() {
   const push = useCallback(async (force = false) => {
     const sb = getSupabase();
     if (!sb || !keyRef.current) return;
+    // Never auto-push before the initial pull has run — otherwise a device
+    // that opened with stale data would overwrite fresher cloud data.
+    if (!force && !readyRef.current) return;
     const data = collectLocalData();
     const h = hashOf(data);
     if (!force && h === lastHashRef.current) {
@@ -131,6 +142,7 @@ export function useSpaceSync() {
       if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
       pull(true);
     };
+    poll(); // pull once immediately, don't wait for the first interval
     const id = setInterval(poll, POLL_MS);
     const onVisible = () => {
       if (typeof document === "undefined" || document.visibilityState === "visible") pull(true);
@@ -156,6 +168,7 @@ export function useSpaceSync() {
     // Whoever connects to a fresh (empty) space seeds it with their data;
     // otherwise the existing shared data wins.
     const result = await pull();
+    readyRef.current = true;
     if (result === "empty") await push(true);
   }, [pull, push]);
 
@@ -163,6 +176,7 @@ export function useSpaceSync() {
     if (typeof window !== "undefined") window.localStorage.removeItem(CODE_KEY);
     keyRef.current = null;
     lastHashRef.current = "";
+    readyRef.current = false;
     setCode(null);
     setStatus("off");
     setLastSync(null);
