@@ -4,6 +4,7 @@ const TABS = [
   { id: "dashboard", label: "Discipline", href: "/" },
   { id: "budget", label: "Budget", href: "/budget" },
   { id: "goals", label: "Objectifs", href: "/goals" },
+  { id: "game", label: "Jeu", href: "/game" },
 ] as const;
 
 export type NavTabId = (typeof TABS)[number]["id"];
