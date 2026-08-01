@@ -26,29 +26,35 @@ Tu ne fais pas « du conseil réseaux sociaux » — il y en a 500 comptes, et l
 aucune preuve. Tu ne fais pas non plus « des tutos IA » — il y en a 500 aussi. Tu as quelque
 chose qu'aucun des deux n'a :
 
-> ### « Je fais des pubs 100 % IA pour des marques. Je te montre exactement comment. »
+> ### « Je vis de pubs 100 % IA pour des marques. Je ne peux pas te les montrer — mais je peux tout t'expliquer. »
 
 **Tu ne parles pas d'IA, tu en vis.** Des marques te payent pour produire des pubs
-intégralement générées. C'est ton avantage structurel et il est indéfendable pour les autres :
-les comptes conseils FR n'ont pas ta compétence technique, les comptes IA FR n'ont pas de
-clients qui les payent, et personne n'a les deux plus ton audience.
+intégralement générées. C'est ton avantage structurel : les comptes conseils FR n'ont pas ta
+compétence technique, les comptes IA FR n'ont pas de clients qui les payent, et personne n'a
+les deux plus ton audience.
 
-**Ce qui rend le conseil réseaux crédible dans ta bouche :** tes pubs doivent *convertir*
-pour être payées. Tu apprends ce qui retient l'attention parce que des marques te facturent
-sur ce résultat. Un coach réseaux te dira ce qui marche ; toi tu peux montrer une pub, ses
-chiffres, et le client qui a renouvelé.
+**La confidentialité joue pour toi, pas contre toi.** Tu ne montres aucun livrable client, et
+c'est très bien : « je ne peux pas te les montrer » est une accroche, pas une excuse. Ce que
+tu ne montres pas a plus de valeur que ce que tu montres.
+
+**Ce que tu montres à la place :** ta méthode, tes prompts, tes principes — et des **vidéos de
+toi générées à 100 % par IA**, signées comme telles. Même compétence démontrée en direct, zéro
+NDA. C'est ta démo commerciale permanente.
+
+**Ce qui rend le conseil réseaux crédible dans ta bouche :** tes pubs doivent *convertir* pour
+être payées. Un coach réseaux te dira ce qui marche ; toi tu es facturé sur le résultat.
 
 **Et l'étude par-dessus :** ta référence a analysé 50 000 hooks *à la main*, en anglais, sur
 un an. Toi tu le fais avec l'IA, en français, en un week-end — et tu montres le script.
 
 **Bio Instagram :**
 ```
-Brick · Pubs 100 % IA pour les marques
-Je te montre exactement comment je les fais
+Brick · Je vis de pubs 100 % IA
+Je t'apprends à faire pareil
 🧱 Mes prompts + le rapport, gratuits ↓
 ```
 
-**La phrase à répéter partout :** « Je fais des pubs 100 % IA. Je te montre tout. »
+**La phrase à répéter partout :** « Je vis de pubs 100 % IA. Je t'apprends à faire pareil. »
 
 ---
 
