@@ -1,373 +1,162 @@
-<title>brick_ia — Plan 2 semaines</title>
+<title>brick_ia — Le calendrier</title>
 
 <style>
-  /* ---------- tokens : DA brick_ia, orange sur noir ---------- */
   :root {
-    --ground:      #080401;
-    --surface:     #120700;
-    --surface-2:   #1A0B00;
-    --line:        #3D1A00;
-    --accent:      #FF7A00;
-    --accent-2:    #FFB347;
-    --accent-ink:  #FF9A3C;
-    --ink:         #F5EDE6;
-    --ink-2:       #B39B8A;
-    --ink-3:       #7A6555;
-    --on-accent:   #140800;
-
-    --p-reseaux: #FF7A00;
-    --p-tuto:    #E5A94E;
-    --p-veille:  #6F93A8;
-    --p-perso:   #A98494;
-
+    --ground: #080401; --surface: #120700; --surface-2: #1A0B00; --line: #3D1A00;
+    --accent: #FF7A00; --accent-ink: #FF9A3C;
+    --ink: #F5EDE6; --ink-2: #B39B8A; --ink-3: #7A6555; --on-accent: #140800;
+    --p-metier: #FF7A00; --p-reseaux: #E5A94E; --p-tuto: #C98A5A;
+    --p-veille: #6F93A8; --p-tech: #8E9B7C; --p-perso: #A98494;
     --shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 8px 24px rgba(0,0,0,.5);
-
-    --display: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
-
-    --max: 1180px;
-    --rail: 216px;
+    --display: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --max: 1080px;
   }
-
   @media (prefers-color-scheme: light) {
     :root {
-      --ground:    #FDF8F3;
-      --surface:   #FFFFFF;
-      --surface-2: #F7EFE6;
-      --line:      #E7D6C4;
-      --accent:    #D45E00;
-      --accent-2:  #B4761C;
-      --accent-ink:#C25400;
-      --ink:       #1E1206;
-      --ink-2:     #6B5645;
-      --ink-3:     #9A8370;
-      --on-accent: #FFFFFF;
-      --p-reseaux: #D45E00;
-      --p-tuto:    #A8761F;
-      --p-veille:  #4C7691;
-      --p-perso:   #8A5D6E;
+      --ground: #FDF8F3; --surface: #FFFFFF; --surface-2: #F7EFE6; --line: #E7D6C4;
+      --accent: #D45E00; --accent-ink: #C25400;
+      --ink: #1E1206; --ink-2: #6B5645; --ink-3: #9A8370; --on-accent: #FFFFFF;
+      --p-metier: #D45E00; --p-reseaux: #A8761F; --p-tuto: #9A5F2E;
+      --p-veille: #4C7691; --p-tech: #63734F; --p-perso: #8A5D6E;
       --shadow: 0 1px 2px rgba(60,30,0,.05), 0 6px 20px rgba(60,30,0,.07);
     }
   }
   :root[data-theme="light"] {
-    --ground:    #FDF8F3;
-    --surface:   #FFFFFF;
-    --surface-2: #F7EFE6;
-    --line:      #E7D6C4;
-    --accent:    #D45E00;
-    --accent-2:  #B4761C;
-    --accent-ink:#C25400;
-    --ink:       #1E1206;
-    --ink-2:     #6B5645;
-    --ink-3:     #9A8370;
-    --on-accent: #FFFFFF;
-    --p-reseaux: #D45E00;
-    --p-tuto:    #A8761F;
-    --p-veille:  #4C7691;
-    --p-perso:   #8A5D6E;
+    --ground: #FDF8F3; --surface: #FFFFFF; --surface-2: #F7EFE6; --line: #E7D6C4;
+    --accent: #D45E00; --accent-ink: #C25400;
+    --ink: #1E1206; --ink-2: #6B5645; --ink-3: #9A8370; --on-accent: #FFFFFF;
+    --p-metier: #D45E00; --p-reseaux: #A8761F; --p-tuto: #9A5F2E;
+    --p-veille: #4C7691; --p-tech: #63734F; --p-perso: #8A5D6E;
     --shadow: 0 1px 2px rgba(60,30,0,.05), 0 6px 20px rgba(60,30,0,.07);
   }
   :root[data-theme="dark"] {
-    --ground:    #080401;
-    --surface:   #120700;
-    --surface-2: #1A0B00;
-    --line:      #3D1A00;
-    --accent:    #FF7A00;
-    --accent-2:  #FFB347;
-    --accent-ink:#FF9A3C;
-    --ink:       #F5EDE6;
-    --ink-2:     #B39B8A;
-    --ink-3:     #7A6555;
-    --on-accent: #140800;
-    --p-reseaux: #FF7A00;
-    --p-tuto:    #E5A94E;
-    --p-veille:  #6F93A8;
-    --p-perso:   #A98494;
+    --ground: #080401; --surface: #120700; --surface-2: #1A0B00; --line: #3D1A00;
+    --accent: #FF7A00; --accent-ink: #FF9A3C;
+    --ink: #F5EDE6; --ink-2: #B39B8A; --ink-3: #7A6555; --on-accent: #140800;
+    --p-metier: #FF7A00; --p-reseaux: #E5A94E; --p-tuto: #C98A5A;
+    --p-veille: #6F93A8; --p-tech: #8E9B7C; --p-perso: #A98494;
     --shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 8px 24px rgba(0,0,0,.5);
   }
 
-  /* ---------- base ---------- */
   * { box-sizing: border-box; }
   body {
-    margin: 0;
-    background: var(--ground);
-    color: var(--ink);
-    font-family: var(--display);
-    font-size: 15px;
-    line-height: 1.55;
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: var(--display); font-size: 15px; line-height: 1.55;
     -webkit-font-smoothing: antialiased;
   }
-  h1, h2, h3, h4 { margin: 0; text-wrap: balance; letter-spacing: -.02em; }
+  h1, h2, h3 { margin: 0; text-wrap: balance; letter-spacing: -.02em; }
   p { margin: 0; }
-  a { color: var(--accent-ink); }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 20px; }
 
-  /* ---------- header ---------- */
-  header.top {
-    border-bottom: 1px solid var(--line);
-    background: linear-gradient(180deg, var(--surface) 0%, var(--ground) 100%);
-  }
-  .top-in {
-    display: flex; flex-wrap: wrap; align-items: flex-end; gap: 24px;
-    padding: 34px 20px 26px; max-width: var(--max); margin: 0 auto;
-  }
-  .brandmark {
-    display: flex; align-items: center; gap: 11px;
-    font-family: var(--mono); font-size: 11px; letter-spacing: .18em;
-    text-transform: uppercase; color: var(--ink-3);
-  }
-  .brick {
-    width: 22px; height: 14px; border-radius: 2px;
-    background: var(--accent); position: relative; flex: none;
-  }
-  .brick::after {
-    content:""; position:absolute; inset: 4px 3px auto 3px; height: 1.5px;
-    background: var(--on-accent); opacity: .5;
-  }
-  h1 { font-size: clamp(28px, 5vw, 44px); font-weight: 800; line-height: 1.02; margin-top: 12px; }
+  /* header */
+  header.top { border-bottom: 1px solid var(--line); background: linear-gradient(180deg, var(--surface), var(--ground)); }
+  .top-in { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 22px; padding: 30px 20px 24px; max-width: var(--max); margin: 0 auto; }
+  .brandmark { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-3); }
+  .brick { width: 22px; height: 14px; border-radius: 2px; background: var(--accent); position: relative; flex: none; }
+  .brick::after { content:""; position:absolute; inset: 4px 3px auto 3px; height: 1.5px; background: var(--on-accent); opacity: .5; }
+  h1 { font-size: clamp(26px, 4.6vw, 40px); font-weight: 800; line-height: 1.05; margin-top: 11px; }
   h1 em { font-style: normal; color: var(--accent); }
-  .lede { color: var(--ink-2); max-width: 48ch; margin-top: 10px; }
-
-  .gauges { display: flex; gap: 10px; margin-left: auto; flex-wrap: wrap; }
-  .gauge {
-    background: var(--surface); border: 1px solid var(--line);
-    border-radius: 10px; padding: 12px 15px; min-width: 128px;
-  }
-  .gauge .n {
-    font-family: var(--mono); font-size: 25px; font-weight: 600;
-    font-variant-numeric: tabular-nums; color: var(--accent); line-height: 1.1;
-  }
-  .gauge .k {
-    font-family: var(--mono); font-size: 10px; letter-spacing: .12em;
-    text-transform: uppercase; color: var(--ink-3); margin-top: 3px;
-  }
+  .lede { color: var(--ink-2); max-width: 44ch; margin-top: 9px; }
+  .gauge { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; margin-left: auto; min-width: 150px; }
+  .gauge .n { font-family: var(--mono); font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--accent); line-height: 1.1; }
+  .gauge .k { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin-top: 3px; }
   .bar { height: 3px; background: var(--surface-2); border-radius: 2px; margin-top: 9px; overflow: hidden; }
-  .bar > i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .35s ease; }
+  .bar > i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .3s ease; }
 
-  /* ---------- layout ---------- */
-  .shell { display: grid; grid-template-columns: var(--rail) minmax(0,1fr); gap: 34px; align-items: start; padding: 30px 20px 90px; max-width: var(--max); margin: 0 auto; }
-
-  nav.rail { position: sticky; top: 18px; display: flex; flex-direction: column; gap: 2px; }
-  nav.rail a {
-    display: flex; align-items: baseline; gap: 9px;
-    padding: 8px 11px; border-radius: 7px; text-decoration: none;
-    color: var(--ink-2); font-size: 14px; border: 1px solid transparent;
+  /* nav */
+  nav.tabs { border-bottom: 1px solid var(--line); background: var(--ground); position: sticky; top: 0; z-index: 20; }
+  .tabs-in { display: flex; gap: 4px; max-width: var(--max); margin: 0 auto; padding: 0 20px; overflow-x: auto; }
+  nav.tabs a {
+    padding: 13px 12px; text-decoration: none; color: var(--ink-2); font-size: 14px;
+    white-space: nowrap; border-bottom: 2px solid transparent;
   }
-  nav.rail a .i { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); }
-  nav.rail a:hover { background: var(--surface); color: var(--ink); }
-  nav.rail a.on { background: var(--surface); border-color: var(--line); color: var(--ink); }
-  nav.rail a.on .i { color: var(--accent); }
-  .rail-foot { margin-top: 18px; padding: 0 11px; display: flex; flex-direction: column; gap: 8px; }
+  nav.tabs a:hover { color: var(--ink); }
+  nav.tabs a.on { color: var(--accent); border-bottom-color: var(--accent); }
+  .tabs-in .spacer { flex: 1; }
   .ghost {
-    font-family: var(--mono); font-size: 11px; letter-spacing: .06em;
+    align-self: center; font-family: var(--mono); font-size: 11px; letter-spacing: .06em;
     background: none; border: 1px solid var(--line); color: var(--ink-3);
-    border-radius: 6px; padding: 7px 9px; cursor: pointer; text-align: left;
+    border-radius: 6px; padding: 6px 9px; cursor: pointer; margin-left: 6px;
   }
   .ghost:hover { color: var(--ink); border-color: var(--ink-3); }
 
-  section { scroll-margin-top: 20px; margin-bottom: 54px; }
-  .eyebrow {
-    font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em;
-    text-transform: uppercase; color: var(--ink-3); display: flex; gap: 10px; align-items: center;
-  }
+  main { max-width: var(--max); margin: 0 auto; padding: 32px 20px 90px; }
+  section { scroll-margin-top: 60px; margin-bottom: 52px; }
+  .eyebrow { font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-3); display: flex; gap: 10px; align-items: center; }
   .eyebrow::after { content:""; flex:1; height:1px; background: var(--line); }
-  h2 { font-size: 24px; font-weight: 750; margin: 10px 0 6px; }
-  .sub { color: var(--ink-2); max-width: 64ch; margin-bottom: 20px; }
-
-  /* ---------- cards / checks ---------- */
+  h2 { font-size: 23px; font-weight: 750; margin: 10px 0 6px; }
+  .sub { color: var(--ink-2); max-width: 62ch; margin-bottom: 20px; }
   .card { background: var(--surface); border: 1px solid var(--line); border-radius: 11px; }
 
-  .tasks { display: flex; flex-direction: column; gap: 9px; }
-  .task {
-    display: grid; grid-template-columns: 26px 1fr auto; gap: 14px; align-items: start;
-    padding: 15px 17px; cursor: pointer; box-shadow: var(--shadow);
-  }
-  .task:hover { border-color: var(--ink-3); }
-  .task .ttl { font-weight: 650; font-size: 15.5px; }
-  .task .desc { color: var(--ink-2); font-size: 14px; margin-top: 3px; }
-  .task .time {
-    font-family: var(--mono); font-size: 11.5px; color: var(--ink-3);
-    white-space: nowrap; padding-top: 2px; font-variant-numeric: tabular-nums;
-  }
-  .task.done .ttl, .task.done .desc { text-decoration: line-through; color: var(--ink-3); text-decoration-thickness: 1px; }
-
-  .box {
-    width: 20px; height: 20px; border-radius: 5px; margin-top: 1px;
-    border: 1.5px solid var(--line); background: var(--surface-2);
-    display: grid; place-items: center; flex: none; transition: .15s;
-  }
-  .box svg { width: 12px; height: 12px; stroke: var(--on-accent); stroke-width: 3; fill: none; opacity: 0; }
-  .done .box { background: var(--accent); border-color: var(--accent); }
-  .done .box svg { opacity: 1; }
-
-  /* ---------- timelines ---------- */
-  .day { display: grid; grid-template-columns: 78px 1fr; gap: 0 18px; }
-  .day .t {
-    font-family: var(--mono); font-size: 13px; color: var(--ink-2);
-    font-variant-numeric: tabular-nums; padding: 13px 0; text-align: right;
-  }
+  /* journée */
+  .day { display: grid; grid-template-columns: 82px 1fr; gap: 0 18px; }
+  .day .t { font-family: var(--mono); font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; padding: 12px 0; text-align: right; }
   .day .t.key { color: var(--accent); font-weight: 600; }
-  .day .e { padding: 13px 0 13px 20px; border-left: 1px solid var(--line); position: relative; }
-  .day .e::before {
-    content:""; position: absolute; left: -4.5px; top: 20px;
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--ground); border: 1.5px solid var(--line);
-  }
+  .day .e { padding: 12px 0 12px 20px; border-left: 1px solid var(--line); position: relative; }
+  .day .e::before { content:""; position: absolute; left: -4.5px; top: 19px; width: 8px; height: 8px; border-radius: 50%; background: var(--ground); border: 1.5px solid var(--line); }
   .day .e.key::before { background: var(--accent); border-color: var(--accent); }
   .day .e strong { font-weight: 650; }
   .day .e.key strong { color: var(--accent); }
-  .day .e .meta { color: var(--ink-3); font-size: 13px; font-family: var(--mono); }
+  .day .e .meta { color: var(--ink-3); font-size: 12.5px; font-family: var(--mono); margin-top: 1px; }
   .day .e .why { color: var(--ink-2); font-size: 13.5px; margin-top: 2px; }
 
-  /* ---------- semaine ---------- */
-  .week { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 9px; }
-  .wd { padding: 13px; display: flex; flex-direction: column; gap: 9px; min-height: 150px; }
-  .wd h4 {
-    font-family: var(--mono); font-size: 11px; letter-spacing: .12em;
-    text-transform: uppercase; color: var(--ink-3);
-  }
-  .wd.hot { border-color: var(--accent); }
-  .wd.hot h4 { color: var(--accent); }
-  .blk { font-size: 13.2px; color: var(--ink-2); line-height: 1.4; }
-  .blk b { color: var(--ink); font-weight: 650; display: block; font-size: 13px; }
-  .blk.shoot b { color: var(--accent); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .panel { padding: 17px 19px; }
+  .panel h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .panel .when { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+  .panel ul { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: 14px; }
+  .panel li { margin-bottom: 5px; }
+  .panel li b { color: var(--ink); font-weight: 650; }
 
-  /* ---------- les 14 vidéos ---------- */
-  .filters { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 16px; align-items: center; }
-  .chip {
-    font-family: var(--mono); font-size: 11px; letter-spacing: .04em;
-    padding: 6px 11px; border-radius: 20px; cursor: pointer;
-    border: 1px solid var(--line); background: var(--surface); color: var(--ink-2);
-    display: inline-flex; align-items: center; gap: 7px;
+  /* calendrier */
+  .cal { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 10px; }
+  .d {
+    padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; cursor: pointer;
   }
-  .chip:hover { color: var(--ink); }
-  .chip .dot { width: 7px; height: 7px; border-radius: 50%; }
-  .chip.on { background: var(--surface-2); color: var(--ink); border-color: var(--ink-3); }
+  .d:hover { border-color: var(--ink-3); }
+  .d.star { border-color: var(--accent); box-shadow: var(--shadow); }
+  .d .hd { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+  .d .hd b { color: var(--ink); font-size: 12.5px; font-weight: 700; letter-spacing: .06em; }
+  .d.star .hd b { color: var(--accent); }
+  .d .pubs { font-size: 12.5px; color: var(--ink-3); font-family: var(--mono); display: flex; align-items: center; gap: 7px; }
+  .d .video { display: grid; grid-template-columns: 20px 1fr; gap: 11px; align-items: start; }
+  .box { width: 19px; height: 19px; border-radius: 5px; margin-top: 1px; border: 1.5px solid var(--line); background: var(--surface-2); display: grid; place-items: center; flex: none; transition: .15s; }
+  .box svg { width: 11px; height: 11px; stroke: var(--on-accent); stroke-width: 3; fill: none; opacity: 0; }
+  .d.done .box { background: var(--accent); border-color: var(--accent); }
+  .d.done .box svg { opacity: 1; }
+  .d .ttl { font-size: 14.3px; line-height: 1.4; font-weight: 500; }
+  .d.done .ttl { color: var(--ink-3); text-decoration: line-through; text-decoration-thickness: 1px; }
+  .d .tag { font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; margin-top: 4px; display: block; }
+  .d[data-p="M"] .tag { color: var(--p-metier); }
+  .d[data-p="R"] .tag { color: var(--p-reseaux); }
+  .d[data-p="T"] .tag { color: var(--p-tuto); }
+  .d[data-p="V"] .tag { color: var(--p-veille); }
+  .d[data-p="X"] .tag { color: var(--p-tech); }
+  .d[data-p="P"] .tag { color: var(--p-perso); }
+  .d .extra { font-size: 13px; color: var(--ink-2); border-top: 1px solid var(--line); padding-top: 9px; }
+  .d .extra b { color: var(--ink); font-weight: 650; }
+  .wk-label { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin: 26px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+  .wk-label:first-child { margin-top: 0; }
 
-  .weeks { display: flex; flex-direction: column; gap: 26px; }
-  .wk-head {
-    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
-    padding-bottom: 9px; border-bottom: 1px solid var(--line); margin-bottom: 13px;
-  }
-  .wk-head h3 { font-size: 15px; font-weight: 700; }
-  .wk-head .goal { font-size: 13.5px; color: var(--ink-2); }
-  .wk-head .goal b { color: var(--accent-ink); font-weight: 650; }
-
-  .vids { display: flex; flex-direction: column; gap: 7px; }
-  .vid {
-    display: grid; grid-template-columns: 22px 46px 1fr; gap: 12px; align-items: start;
-    cursor: pointer; padding: 12px 14px;
-  }
-  .vid:hover { border-color: var(--ink-3); }
-  .vid .box { width: 18px; height: 18px; border-radius: 4px; }
-  .vid .box svg { width: 11px; height: 11px; }
-  .vid .d {
-    font-family: var(--mono); font-size: 11px; color: var(--ink-3);
-    letter-spacing: .08em; text-transform: uppercase; padding-top: 3px;
-  }
-  .vid .txt { font-size: 14.4px; line-height: 1.4; }
-  .vid .tag {
-    font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em;
-    text-transform: uppercase; margin-top: 3px; display: block;
-  }
-  .vid[data-p="R"] .tag { color: var(--p-reseaux); }
-  .vid[data-p="T"] .tag { color: var(--p-tuto); }
-  .vid[data-p="V"] .tag { color: var(--p-veille); }
-  .vid[data-p="P"] .tag { color: var(--p-perso); }
-  .vid.done .txt { color: var(--ink-3); text-decoration: line-through; text-decoration-thickness: 1px; }
-  .vid.dim { opacity: .22; }
-  .vid.star { border-color: var(--accent); box-shadow: var(--shadow); }
-  .vid .note {
-    display: block; margin-top: 6px; padding-top: 6px; font-size: 13px;
-    color: var(--ink-2); border-top: 1px solid var(--line);
-  }
-
-  /* ---------- formats ---------- */
-  .grid2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); gap: 9px; }
-  .fmt { padding: 15px 16px; display: flex; flex-direction: column; gap: 7px; }
-  .fmt .fh { display: flex; align-items: baseline; gap: 10px; }
-  .fmt .code {
-    font-family: var(--mono); font-size: 11px; color: var(--on-accent);
-    background: var(--accent); padding: 2px 6px; border-radius: 4px; font-weight: 600;
-  }
-  .fmt h4 { font-size: 15px; font-weight: 700; }
-  .fmt .role { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
-  .fmt pre {
-    font-family: var(--mono); font-size: 11.6px; line-height: 1.6; color: var(--ink-2);
-    background: var(--surface-2); border: 1px solid var(--line); border-radius: 7px;
-    padding: 10px 11px; margin: 3px 0 0; overflow-x: auto; white-space: pre;
-  }
-
-  /* ---------- hooks ---------- */
-  .search {
-    width: 100%; padding: 11px 14px; border-radius: 9px; font-size: 14.5px;
-    background: var(--surface); border: 1px solid var(--line); color: var(--ink);
-    font-family: var(--display); margin-bottom: 14px;
-  }
+  /* accroches */
+  .search { width: 100%; padding: 11px 14px; border-radius: 9px; font-size: 14.5px; background: var(--surface); border: 1px solid var(--line); color: var(--ink); font-family: var(--display); margin-bottom: 13px; }
   .search::placeholder { color: var(--ink-3); }
-  .hooks { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px,1fr)); gap: 7px; }
-  .hook {
-    padding: 10px 13px; display: grid; grid-template-columns: 34px 1fr; gap: 11px;
-    align-items: baseline; cursor: pointer; font-size: 14px; line-height: 1.4;
-    text-align: left; color: inherit; font-family: inherit;
-  }
+  .hooks { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); gap: 7px; }
+  .hook { padding: 10px 13px; font-size: 14px; line-height: 1.4; cursor: pointer; text-align: left; color: inherit; font-family: inherit; }
   .hook:hover { border-color: var(--accent); }
-  .hook .f { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); }
-  .hook.copied { border-color: var(--accent); }
-  .hook.copied .f { color: var(--accent); }
-  .hook.copied .f::after { content: " ✓"; }
+  .hook.copied { border-color: var(--accent); color: var(--accent); }
+  .hook.copied::after { content: " ✓ copié"; font-family: var(--mono); font-size: 10.5px; }
 
-  /* ---------- tables ---------- */
-  .tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
-  .tbl th {
-    text-align: left; font-family: var(--mono); font-weight: 500; font-size: 10.5px;
-    letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3);
-    padding: 0 12px 9px; border-bottom: 1px solid var(--line);
-  }
-  .tbl td { padding: 11px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
-  .tbl tr:last-child td { border-bottom: none; }
-  .tbl .num { font-family: var(--mono); color: var(--accent); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .scroller { overflow-x: auto; }
-
-  .rules { display: flex; flex-direction: column; gap: 1px; background: var(--line); border-radius: 11px; overflow: hidden; border: 1px solid var(--line); }
-  .rule { background: var(--surface); padding: 14px 17px; display: grid; grid-template-columns: 26px 1fr; gap: 13px; align-items: baseline; }
-  .rule .n { font-family: var(--mono); font-size: 12px; color: var(--accent); font-weight: 600; }
-  .rule b { font-weight: 650; }
-  .rule span { color: var(--ink-2); }
-
-  .note-block {
-    border-left: 2px solid var(--accent); padding: 3px 0 3px 15px;
-    color: var(--ink-2); font-size: 14px; margin-top: 16px; max-width: 68ch;
-  }
+  .note-block { border-left: 2px solid var(--accent); padding: 3px 0 3px 15px; color: var(--ink-2); font-size: 14px; margin-top: 18px; max-width: 66ch; }
   .note-block b { color: var(--ink); font-weight: 650; }
+  footer { border-top: 1px solid var(--line); padding: 24px 20px 60px; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--ink-3); text-align: center; }
 
-  footer {
-    border-top: 1px solid var(--line); padding: 26px 20px 60px;
-    font-family: var(--mono); font-size: 11px; letter-spacing: .06em;
-    color: var(--ink-3); text-align: center;
-  }
-
-  /* ---------- responsive ---------- */
-  @media (max-width: 1000px) { .week { grid-template-columns: repeat(2, minmax(0,1fr)); } }
-  @media (max-width: 860px) {
-    .shell { grid-template-columns: 1fr; gap: 20px; padding-top: 14px; }
-    nav.rail {
-      position: sticky; top: 0; z-index: 20; flex-direction: row; overflow-x: auto;
-      background: var(--ground); border-bottom: 1px solid var(--line);
-      padding: 9px 20px; gap: 6px; margin: 0 -20px;
-    }
-    nav.rail a { white-space: nowrap; border: 1px solid var(--line); }
-    nav.rail a .i { display: none; }
-    .rail-foot { display: none; }
-    .gauges { margin-left: 0; width: 100%; }
-    .gauge { flex: 1; min-width: 0; }
-    .day { grid-template-columns: 62px 1fr; }
-  }
-  @media (max-width: 560px) {
-    .week { grid-template-columns: 1fr; }
-    .wd { min-height: 0; }
-    .vid { grid-template-columns: 20px 1fr; }
-    .vid .d { grid-column: 2; padding-top: 0; margin-bottom: 2px; }
+  @media (max-width: 720px) {
+    .two { grid-template-columns: 1fr; }
+    .day { grid-template-columns: 66px 1fr; }
+    .gauge { margin-left: 0; }
   }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -375,437 +164,244 @@
 <header class="top">
   <div class="top-in">
     <div>
-      <div class="brandmark"><span class="brick"></span> brick_ia · plan 2 semaines</div>
-      <h1>1 vidéo par jour.<br>5 stories. <em>8 h par semaine.</em></h1>
-      <p class="lede">Calibré pour quelqu'un qui filme pour une marque la journée. Coche au fur et à mesure — c'est enregistré dans ton navigateur.</p>
+      <div class="brandmark"><span class="brick"></span> brick_ia · calendrier</div>
+      <h1>2–3 pubs le jour.<br><em>1 vidéo le soir.</em></h1>
+      <p class="lede">Ce qu'il y a à faire, jour par jour. Coche la vidéo quand elle est publiée — c'est enregistré dans ton navigateur.</p>
     </div>
-    <div class="gauges">
-      <div class="gauge">
-        <div class="n" id="g-prep">0/6</div>
-        <div class="k">Avant de lancer</div>
-        <div class="bar"><i id="b-prep"></i></div>
-      </div>
-      <div class="gauge">
-        <div class="n" id="g-vid">0/14</div>
-        <div class="k">Vidéos publiées</div>
-        <div class="bar"><i id="b-vid"></i></div>
-      </div>
-      <div class="gauge">
-        <div class="n" id="g-day">J0</div>
-        <div class="k">Jour en cours</div>
-        <div class="bar"><i id="b-day"></i></div>
-      </div>
+    <div class="gauge">
+      <div class="n" id="g-vid">0/14</div>
+      <div class="k">Vidéos publiées</div>
+      <div class="bar"><i id="b-vid"></i></div>
     </div>
   </div>
 </header>
 
-<div class="shell">
-  <nav class="rail" id="rail">
-    <a href="#prep"><span class="i">01</span> Avant de lancer</a>
-    <a href="#journee"><span class="i">02</span> Ta journée</a>
-    <a href="#semaine"><span class="i">03</span> Ta semaine</a>
-    <a href="#stories"><span class="i">04</span> Les stories</a>
-    <a href="#videos"><span class="i">05</span> Les 14 vidéos</a>
-    <a href="#formats"><span class="i">06</span> Les formats</a>
-    <a href="#hooks"><span class="i">07</span> Les accroches</a>
-    <a href="#lundi"><span class="i">08</span> Le lundi</a>
-    <a href="#regles"><span class="i">09</span> Les règles</a>
-    <div class="rail-foot">
-      <button class="ghost" id="btn-theme">◐ Thème</button>
-      <button class="ghost" id="btn-reset">↺ Tout décocher</button>
+<nav class="tabs">
+  <div class="tabs-in" id="tabs">
+    <a href="#journee">Ta journée</a>
+    <a href="#weekend">Le week-end</a>
+    <a href="#calendrier">Les 14 jours</a>
+    <a href="#accroches">Accroches</a>
+    <span class="spacer"></span>
+    <button class="ghost" id="btn-theme">◐</button>
+    <button class="ghost" id="btn-reset">↺</button>
+  </div>
+</nav>
+
+<main>
+
+  <section id="journee">
+    <div class="eyebrow">Du lundi au vendredi</div>
+    <h2>Ta journée</h2>
+    <p class="sub">3 à 5 h de pubs clients, ~55 min de contenu autour. La vidéo du soir est déjà montée et programmée la veille — tu n'as rien à faire à 18h30.</p>
+    <div class="day" id="day"></div>
+    <p class="note-block"><b>La seule règle technique du plan :</b> lance la capture d'écran au début de chaque session client, systématiquement. Tes ratés de génération, tes itérations de prompt, tes réglages — c'est exactement ce qui fait les meilleures vidéos, et c'est ce que tu ne penses jamais à filmer sur le moment.</p>
+  </section>
+
+  <section id="weekend">
+    <div class="eyebrow">Samedi et dimanche</div>
+    <h2>Le week-end</h2>
+    <p class="sub">Pas de pubs clients. Le samedi est léger ; le dimanche, tu prépares toute la semaine en 1 h 45.</p>
+    <div class="two">
+      <div class="card panel">
+        <div class="when">Samedi · 40 min</div>
+        <h3>Rien de spécial</h3>
+        <ul>
+          <li>Les <b>5 stories</b> comme d'habitude</li>
+          <li><b>Montage</b> de la vidéo de dimanche</li>
+          <li>Rien d'autre. C'est voulu.</li>
+        </ul>
+      </div>
+      <div class="card panel">
+        <div class="when">Dimanche · 1 h 45 + stories</div>
+        <h3>Tu prépares la semaine</h3>
+        <ul>
+          <li><b>15h — Écris les 7 titres</b> de la semaine (45 min)</li>
+          <li><b>16h — Session face caméra :</b> 6 vidéos d'un coup (1 h). Une tenue suffit si tu changes de fond entre les prises.</li>
+          <li><b>12h30 — Story spéciale :</b> l'avant/après d'une pub de la semaine</li>
+          <li>Montage + stories le soir</li>
+        </ul>
+      </div>
     </div>
-  </nav>
+    <p class="note-block">Les vidéos <b>capture d'écran</b> n'ont pas besoin de la session du dimanche — elles sont déjà enregistrées pendant ton travail client. Tu ne tournes en face caméra que les vidéos <b>réseaux</b> et <b>perso</b>.</p>
+  </section>
 
-  <main>
+  <section id="calendrier">
+    <div class="eyebrow">Le plan</div>
+    <h2>Les 14 jours</h2>
+    <p class="sub">Une vidéo par jour, publiée à 18h30 : TikTok 18h30, Reel 18h45, Short 19h. 🖥️ = capture d'écran (déjà enregistrée) · 🎥 = face caméra (session du dimanche).</p>
+    <div id="calendrier-body"></div>
+  </section>
 
-    <!-- 01 ................................................................ -->
-    <section id="prep">
-      <div class="eyebrow">01 — Avant la première vidéo</div>
-      <h2>Les 6 chantiers</h2>
-      <p class="sub">Un week-end de travail. La collecte des 200 vidéos se fait pendant la semaine 1, au fil de ton scroll — elle ne te coûte pas de temps dédié.</p>
-      <div class="tasks" id="tasks"></div>
-      <p class="note-block"><b>Ta bio, à copier-coller :</b><br>
-        Brick · Réseaux sociaux &amp; IA<br>
-        J'ai fait analyser 200 vidéos virales FR par une IA<br>
-        🧱 Le rapport + mes prompts, gratuits ↓</p>
-    </section>
+  <section id="accroches">
+    <div class="eyebrow">Aide-mémoire</div>
+    <h2>Les accroches</h2>
+    <p class="sub">Le hook s'écrit avant la vidéo. S'il ne tient pas en 10 mots, tu ne tournes pas. Clique pour copier.</p>
+    <input class="search" id="hook-search" type="search" placeholder="Chercher…" aria-label="Chercher une accroche">
+    <div class="hooks" id="hooks-grid"></div>
+  </section>
 
-    <!-- 02 ................................................................ -->
-    <section id="journee">
-      <div class="eyebrow">02 — Tous les jours</div>
-      <h2>Ta journée : 12 min de stories, 25 min de montage</h2>
-      <p class="sub">La vidéo est déjà tournée et programmée. Ce qui se fait en direct, c'est les stories et les réponses aux commentaires.</p>
-      <div class="day" id="day"></div>
-      <p class="note-block">Si une semaine part en vrille côté client : tu tiens les stories et tu tombes à 4 vidéos. <b>Ne saute jamais les stories</b> — c'est ce qui coûte le moins et rapporte le plus.</p>
-    </section>
+</main>
 
-    <!-- 03 ................................................................ -->
-    <section id="semaine">
-      <div class="eyebrow">03 — Chaque semaine</div>
-      <h2>Un seul tournage, 7 vidéos</h2>
-      <p class="sub">≈ 8 h par semaine en tout. Le montage est étalé 25 min par soir plutôt qu'en bloc — c'est ce qui tient à côté d'un travail.</p>
-      <div class="week" id="week"></div>
-      <p class="note-block"><b>Ton levier :</b> tourne tes vidéos juste après un tournage pour la marque. Lumière montée, tu es habillé, cadré, dans le rythme — ta session passe de 3 h à 1 h 30. Deux garde-fous : demande à la marque avant de montrer quoi que ce soit de leur setup, et change de tenue entre les deux.</p>
-    </section>
-
-    <!-- 04 ................................................................ -->
-    <section id="stories">
-      <div class="eyebrow">04 — 12 minutes par jour</div>
-      <h2>Les stories, heure par heure</h2>
-      <p class="sub">Ton meilleur rapport temps/résultat : zéro montage, zéro écriture, et c'est là que se fait l'attachement — donc les ventes.</p>
-      <div class="day" id="stories-day" style="margin-bottom: 26px;"></div>
-
-      <h3 style="font-size:15px;font-weight:700;margin-bottom:4px;">Les 4 rendez-vous de la semaine</h3>
-      <p class="sub" style="margin-bottom:14px;">Ils remplacent la story du créneau concerné, ils ne s'ajoutent pas.</p>
-      <div class="card scroller" style="padding: 6px 6px 2px;">
-        <table class="tbl">
-          <thead><tr><th>Quand</th><th>Story</th><th>Pourquoi</th></tr></thead>
-          <tbody id="weekly-stories"></tbody>
-        </table>
-      </div>
-
-      <h3 style="font-size:15px;font-weight:700;margin:26px 0 12px;">Les 6 règles</h3>
-      <div class="rules" id="story-rules"></div>
-    </section>
-
-    <!-- 05 ................................................................ -->
-    <section id="videos">
-      <div class="eyebrow">05 — Le contenu</div>
-      <h2>Les 14 vidéos</h2>
-      <p class="sub">Une par jour, publiée à 18h30 : TikTok 18h30, Reel 18h45, Short 19h. Les audiences ne se recoupent presque pas — publier le même jour ne te pénalise pas.</p>
-      <div class="filters" id="filters"></div>
-      <div class="weeks" id="weeks"></div>
-      <p class="note-block"><b>Le pilier tech saute pour ces deux semaines.</b> À 1 vidéo/jour, cinq piliers reviendraient chacun tous les 5 jours et aucun ne s'installerait. Le matos vit en story pendant ce temps, et revient en vidéo au mois 2.</p>
-    </section>
-
-    <!-- 06 ................................................................ -->
-    <section id="formats">
-      <div class="eyebrow">06 — Comment filmer</div>
-      <h2>Les formats</h2>
-      <p class="sub">Tu n'improvises jamais la structure, seulement le sujet. Les quatre premiers sont ceux d'@personalbrandlaunch — ce sont eux qui font la portée.</p>
-      <div class="grid2" id="formats-grid"></div>
-    </section>
-
-    <!-- 07 ................................................................ -->
-    <section id="hooks">
-      <div class="eyebrow">07 — Quoi dire en premier</div>
-      <h2>Les accroches</h2>
-      <p class="sub">Le hook s'écrit avant la vidéo. S'il ne tient pas en 10 mots, tu ne tournes pas. Clique pour copier.</p>
-      <input class="search" id="hook-search" type="search" placeholder="Chercher une accroche…" aria-label="Chercher une accroche">
-      <div class="hooks" id="hooks-grid"></div>
-    </section>
-
-    <!-- 08 ................................................................ -->
-    <section id="lundi">
-      <div class="eyebrow">08 — 10 minutes, le lundi</div>
-      <h2>La revue</h2>
-      <p class="sub">Sors la meilleure et la pire vidéo des 7 derniers jours. La meilleure génère une variante dans le tournage du dimanche suivant. La pire se diagnostique.</p>
-      <div class="card scroller" style="padding: 6px 6px 2px; margin-bottom: 16px;">
-        <table class="tbl">
-          <thead><tr><th>Symptôme</th><th>Diagnostic</th><th>Ce que tu fais</th></tr></thead>
-          <tbody>
-            <tr><td>Rétention 3 s basse</td><td>C'est le <b>hook</b></td><td>Garde le sujet, réécris l'accroche, republie dans 4 semaines</td></tr>
-            <tr><td>Rétention correcte, peu de partages</td><td>C'est le <b>sujet</b></td><td>Abandonne-le, ne le retente pas</td></tr>
-            <tr><td>Beaucoup de vues, peu d'abonnés</td><td>C'est le <b>profil</b></td><td>Réécris la bio et change les 3 vidéos épinglées</td></tr>
-            <tr><td>Beaucoup d'abonnés, zéro lead</td><td>C'est le <b>CTA</b></td><td>Mets le déclencheur en commentaire sur 1 vidéo sur 3</td></tr>
-            <tr><td>Peu de vues des stories</td><td>C'est la <b>dernière story</b></td><td>Finis toujours par un sondage ou une question</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="card scroller" style="padding: 6px 6px 2px;">
-        <table class="tbl">
-          <thead><tr><th>Les 4 chiffres à noter</th><th>Seuil</th><th>Ce qu'il te dit</th></tr></thead>
-          <tbody>
-            <tr><td>Rétention à 3 s</td><td class="num">&gt; 55 %</td><td>Ton hook. Si c'est bas, rien d'autre ne compte.</td></tr>
-            <tr><td>Vues non-abonnés</td><td class="num">&gt; 70 %</td><td>Ta capacité à recruter</td></tr>
-            <tr><td>Partages / 1000 vues</td><td class="num">&gt; 5</td><td>Le vrai signal de viralité</td></tr>
-            <tr><td>Réponses aux stories</td><td class="num">&gt; 10 / jour</td><td>La santé de ton attachement</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p class="note-block">Ne change <b>qu'une seule variable à la fois</b> entre deux tests, sinon tu n'apprends rien.</p>
-    </section>
-
-    <!-- 09 ................................................................ -->
-    <section id="regles">
-      <div class="eyebrow">09 — Si tu oublies tout le reste</div>
-      <h2>Les 5 règles</h2>
-      <div class="rules" id="rules"></div>
-    </section>
-
-  </main>
-</div>
-
-<footer>brick_ia · plan 2 semaines · progression enregistrée localement</footer>
+<footer>brick_ia · calendrier 2 semaines · progression enregistrée localement</footer>
 
 <script>
 (function () {
   "use strict";
 
-  var K = "brickia.plan.v2";
+  var K = "brickia.plan.v3";
   var state = {};
   try { state = JSON.parse(localStorage.getItem(K) || "{}") || {}; } catch (e) { state = {}; }
   function save() { try { localStorage.setItem(K, JSON.stringify(state)); } catch (e) {} }
 
   var CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="4,13 9,18 20,6"></polyline></svg>';
 
-  function checkable(el, id, onToggle) {
-    el.setAttribute("role", "checkbox");
-    el.setAttribute("tabindex", "0");
-    el.setAttribute("aria-checked", state[id] ? "true" : "false");
-    function hit() {
-      state[id] = !state[id];
-      el.classList.toggle("done", !!state[id]);
-      el.setAttribute("aria-checked", state[id] ? "true" : "false");
-      save(); onToggle();
-    }
-    el.addEventListener("click", hit);
-    el.addEventListener("keydown", function (e) {
-      if (e.key === " " || e.key === "Enter") { e.preventDefault(); hit(); }
-    });
-  }
-
-  /* ---------- 01 · chantiers ---------- */
-  var TASKS = [
-    ["Les comptes", "Chaîne YouTube @brick_ia créée. Bios réécrites sur les trois plateformes. 3 vidéos épinglées. Broadcast channel ouvert.", "2 h"],
-    ["Les templates", "Sous-titres (blanc + un seul mot orange), les codes visuels des formats, le carton de série. Une fois pour toutes.", "2 h"],
-    ["Le DM automatique", "Automatisation branchée sur PACK et PROMPT. Teste-la toi-même avant de la lancer.", "1 h"],
-    ["La collecte", "Une collection TikTok dédiée. Tu y enregistres 200 vidéos FR à +500k vues au fil de ton scroll, pendant la semaine 1.", "0 min"],
-    ["L'étude", "Saisie des 200 accroches dans un TSV, puis node scripts/analyse-hooks.mjs. Le rapport se génère tout seul.", "1 h 30"],
-    ["Le rapport", "Les résultats + 50 prompts, dans un Notion propre à ta DA. C'est ce que tu offres contre un commentaire.", "1 h 30"]
-  ];
-
-  var tasksEl = document.getElementById("tasks");
-  TASKS.forEach(function (t, i) {
-    var id = "prep" + i;
-    var el = document.createElement("div");
-    el.className = "card task" + (state[id] ? " done" : "");
-    el.innerHTML = '<span class="box">' + CHECK + '</span>' +
-      '<span><span class="ttl">' + t[0] + '</span><span class="desc">' + t[1] + '</span></span>' +
-      '<span class="time">' + t[2] + '</span>';
-    checkable(el, id, refresh);
-    tasksEl.appendChild(el);
-  });
-
-  /* ---------- 02 · journée ---------- */
+  /* ---------- ta journée ---------- */
   var DAY = [
-    ["8h30", 0, "Story n°1 — l'ouverture", "10 s", "Ce que tu fais aujourd'hui. C'est l'habitude qui te met en tête de liste."],
-    ["12h30", 0, "Story n°2 — les coulisses", "1-2 stories", "Le tournage marque, ton setup, ton écran. On voit que tu bosses vraiment."],
-    ["17h00", 0, "Story n°3 — le truc utile", "1 story", "Un prompt en blanc sur fond noir. Screenshotable. C'est ce qui te fait suivre en story."],
-    ["18h30", 1, "La vidéo du jour", "TikTok, puis Reel 18h45, Short 19h", "Déjà montée et programmée la veille."],
-    ["19h00", 1, "Story n°4 — repost de la vidéo", "1 story", "Avec une phrase de contexte qui n'est PAS dans la vidéo. Pousse la vidéo à ta base dans les 2 premières heures."],
-    ["19h–20h", 1, "Répondre à TOUS les commentaires", "20 min", "La fenêtre où l'algorithme décide. Non délégable."],
-    ["21h00", 0, "Story n°5 — la question", "1 story", "Sondage 2 options ou boîte à questions. Tu récoltes les sujets de tes prochaines vidéos."],
-    ["21h15", 0, "Montage de la vidéo du lendemain", "25 min", "Puis tu la programmes. La journée est finie."]
+    ["8h30", 0, "Story 1 — sur quelle pub tu bosses aujourd'hui", "5 min", ""],
+    ["9h00", 1, "🎬 Capture d'écran ON, puis pub 1 et pub 2", "2 à 4 h", "La capture tourne pendant que tu travailles. C'est ton stock de contenu, gratuit."],
+    ["12h30", 0, "Story 2 — ton écran, une génération en cours", "3 min", "Ta story la plus rentable : attachement + preuve commerciale."],
+    ["13h00", 0, "Pause", "", ""],
+    ["14h00", 1, "Pub 3 (les jours à 3 pubs), livraisons, mails clients", "1 à 2 h", ""],
+    ["17h00", 0, "Story 3 — le truc utile du jour", "3 min", "Un prompt écrit en gros, screenshotable."],
+    ["18h30", 1, "Ta vidéo se publie", "0 min", "Déjà montée et programmée hier soir. Tu n'as rien à faire."],
+    ["19h00", 0, "Story 4 — repost, puis réponses aux commentaires", "25 min", "La fenêtre où l'algorithme décide. Non délégable."],
+    ["21h00", 0, "Story 5 — sondage ou question", "2 min", ""],
+    ["21h15", 1, "Montage de la vidéo de demain + programmation", "25 min", "La journée est finie."]
   ];
   var dayEl = document.getElementById("day");
   DAY.forEach(function (d) {
     dayEl.insertAdjacentHTML("beforeend",
       '<div class="t' + (d[1] ? " key" : "") + '">' + d[0] + '</div>' +
       '<div class="e' + (d[1] ? " key" : "") + '"><strong>' + d[2] + '</strong>' +
-      '<div class="meta">' + d[3] + '</div><div class="why">' + d[4] + '</div></div>');
+      (d[3] ? '<div class="meta">' + d[3] + '</div>' : '') +
+      (d[4] ? '<div class="why">' + d[4] + '</div>' : '') + '</div>');
   });
 
-  /* ---------- 03 · semaine ---------- */
-  var WEEK = [
-    ["Lundi", 0, [["", "Revue des chiffres", "10 min, le matin"], ["", "Montage + stories", ""]]],
-    ["Mardi", 0, [["", "Montage + stories", "la routine"]]],
-    ["Mercredi", 0, [["", "Montage + stories", ""], ["", "1 carrousel Instagram", "20 min"]]],
-    ["Jeudi", 0, [["", "Montage + stories", ""]]],
-    ["Vendredi", 0, [["", "Montage + stories", ""], ["", "1 post LinkedIn", "10 min"]]],
-    ["Samedi", 0, [["", "Montage + stories", ""], ["", "3 messages broadcast", "10 min"]]],
-    ["Dimanche", 1, [["14h", "Écrire les 7 titres", "1 h", 0], ["15h–18h", "TOURNAGE — 7 vidéos", "3 h, ou 1 h 30 après un tournage marque", 1]]]
-  ];
-  var weekEl = document.getElementById("week");
-  WEEK.forEach(function (d) {
-    var blocks = d[2].map(function (b) {
-      return '<div class="blk' + (b[3] ? " shoot" : "") + '"><b>' + (b[0] ? b[0] + " · " : "") + b[1] + "</b>" + (b[2] || "") + "</div>";
-    }).join("");
-    weekEl.insertAdjacentHTML("beforeend",
-      '<div class="card wd' + (d[1] ? " hot" : "") + '"><h4>' + d[0] + "</h4>" + blocks + "</div>");
-  });
+  /* ---------- les 14 jours ---------- */
+  var P = { M: "Pub IA", R: "Réseaux", T: "Tuto IA", V: "Veille IA", X: "Tech", P: "Perso" };
 
-  /* ---------- 04 · stories ---------- */
-  var STORIES = [
-    ["8h30", "L'ouverture", "Toi, 10 s, ce que tu fais aujourd'hui. Ou ton écran / ton café avec du texte par-dessus.", "La présence."],
-    ["12h30", "Les coulisses", "Le tournage marque (si autorisé), ton setup, ton écran de montage, un outil que tu testes.", "L'attachement."],
-    ["17h00", "Le truc utile", "Une seule chose applicable : un prompt, un raccourci, un outil. Écrit en gros, screenshotable.", "C'est la story qui te fait suivre en story."],
-    ["19h00", "La vidéo du jour", "Repost de ton Reel + une phrase de contexte qui n'est pas dans la vidéo.", "Le signal des 2 premières heures."],
-    ["21h00", "La question", "Sondage à 2 options, ou boîte à questions.", "L'engagement, et tes sujets de demain."]
-  ];
-  var sdEl = document.getElementById("stories-day");
-  STORIES.forEach(function (s) {
-    sdEl.insertAdjacentHTML("beforeend",
-      '<div class="t key">' + s[0] + '</div>' +
-      '<div class="e key"><strong>' + s[1] + '</strong>' +
-      '<div class="why">' + s[2] + '</div><div class="meta">' + s[3] + '</div></div>');
-  });
+  // jour, semaine, libellé, pubs?, mode, pilier, format, titre, story spéciale, note
+  var DAYS = [
+    [1, 1, "Lundi", 1, "🖥️", "M", "F2", "J'ai fait cette pub entièrement en IA. Zéro caméra, zéro acteur, zéro studio.",
+      "21h · Sondage : sur quoi je fais la vidéo de jeudi ?", ""],
+    [2, 1, "Mardi", 1, "🎥", "R", "F1", "Un hook à 100 vues vs 100 000 vues vs 1 million de vues", "", ""],
+    [3, 1, "Mercredi", 1, "🖥️", "T", "F7", "Le prompt qui me sort 30 accroches en 10 secondes",
+      "21h · Boîte à questions sur l'IA", "+ 1 carrousel Instagram (20 min)"],
+    [4, 1, "Jeudi", 1, "🎥", "P", "F10", "Je gagne ma vie en faisant des pubs 100 % IA. Voilà comment j'en suis arrivé là.",
+      "", "★ La vidéo la plus importante des deux semaines. C'est ta déclaration de positionnement : tu ne parles pas d'IA, tu en vis. C'est celle que tu épingles."],
+    [5, 1, "Vendredi", 1, "🖥️", "V", "F8", "L'IA de la semaine #1 — l'actu marquante des 7 derniers jours",
+      "12h30 · Les chiffres de la semaine", "+ 1 post LinkedIn (10 min) — c'est là que sont tes clients"],
+    [6, 1, "Samedi", 0, "🖥️", "M", "F12", "Les 12 générations ratées avant celle que le client a validée",
+      "", "★ Ta meilleure surprise. Personne ne montre ses ratés — ça humanise, ça prouve que tu maîtrises, et la rétention est redoutable. Elle est déjà dans tes captures d'écran."],
+    [7, 1, "Dimanche", 0, "🎥", "R", "F5", "Il n'y a que 3 types de vidéos. Tu n'en fais qu'une.",
+      "12h30 · Avant/après d'une pub de la semaine", "15h écriture des titres · 16h session face caméra"],
 
-  var WEEKLY = [
-    ["Lundi 21h", "Sondage : « sur quoi je fais la vidéo de jeudi ? » — 2 options", "Tu tournes le gagnant. La vidéo est validée avant d'exister, et ceux qui ont voté la regardent."],
-    ["Mercredi 21h", "Boîte à questions : « pose-moi une question sur l'IA »", "Alimente tes vidéos-réponses et tes DM. Ta meilleure source de sujets."],
-    ["Vendredi 12h30", "Les chiffres de la semaine — vues, abonnés, ce qui a marché", "Le build in public. Ça crée de l'attachement et ça prouve ta compétence en même temps."],
-    ["Dimanche 12h30", "Les coulisses du tournage — les 7 vidéos en train de se faire", "Historiquement la story la plus regardée. Les gens adorent voir la fabrique."]
-  ];
-  var wsEl = document.getElementById("weekly-stories");
-  WEEKLY.forEach(function (w) {
-    wsEl.insertAdjacentHTML("beforeend",
-      "<tr><td><b>" + w[0] + "</b></td><td>" + w[1] + "</td><td>" + w[2] + "</td></tr>");
-  });
-
-  var STORY_RULES = [
-    ["Jamais plus de 7 stories par jour.", "Au-delà, le taux de complétion s'effondre et Instagram arrête de te montrer en tête."],
-    ["Toujours finir par une story interactive.", "C'est la dernière vue de la journée, celle qui décide si tu réapparais demain en tête de barre."],
-    ["Un seul lien externe par jour maximum.", "Au-delà, tes stories sont vues comme promotionnelles."],
-    ["La story du matin doit être du jour.", "Tu peux filmer les autres d'avance le dimanche, jamais celle-là."],
-    ["Ton visage au moins une fois par jour.", "Du texte sur fond noir toute la journée, ce n'est pas de l'attachement."],
-    ["Réponds à toutes les réponses de story.", "C'est ta conversation la plus directe et le canal qui convertit le mieux vers le Skool."]
-  ];
-  renderRules(document.getElementById("story-rules"), STORY_RULES);
-
-  /* ---------- 05 · les 14 vidéos ---------- */
-  var P = {
-    R: ["Réseaux", "var(--p-reseaux)"],
-    T: ["Tuto IA", "var(--p-tuto)"],
-    V: ["Veille IA", "var(--p-veille)"],
-    P: ["Perso", "var(--p-perso)"]
-  };
-
-  var V = [
-    [1, "Lun", "R", "F1", "Un hook à 100 vues vs 100 000 vues vs 1 million de vues", ""],
-    [1, "Mar", "T", "F7", "Le prompt qui me sort 30 accroches en 10 secondes", ""],
-    [1, "Mer", "R", "F3", "Vole ces 10 accroches. Je les ai testées.", ""],
-    [1, "Jeu", "P", "F10", "Je filme pour des marques toute la journée. Voilà ce que ça m'a appris sur les vues.", "★ La vidéo la plus importante de la semaine : elle explique ton virage sans l'annoncer. Tu filmes des pubs, donc tu sais ce qui retient l'attention, donc tu as la légitimité pour parler réseaux sociaux."],
-    [1, "Ven", "V", "F8", "L'IA de la semaine #1 — l'actu marquante des 7 derniers jours", ""],
-    [1, "Sam", "T", "F7", "Transformer une vidéo longue en 10 shorts, automatiquement", ""],
-    [1, "Dim", "R", "F5", "Il n'y a que 3 types de vidéos. Tu n'en fais qu'une.", ""],
-
-    [2, "Lun", "R", "F2", "J'ai fait analyser 200 vidéos virales françaises par une IA. Voilà ce qui revient.", "★ Le jour le plus important des deux semaines : ta prise d'autorité. Le rapport gratuit sort le même jour, avec « commente PACK » en fin de vidéo."],
-    [2, "Mar", "T", "F7", "Comment je l'ai fait — le prompt et le script, en entier", ""],
-    [2, "Mer", "R", "F1", "Le hook n°1 en France — et les 2 juste derrière", ""],
-    [2, "Jeu", "R", "F4", "Pourquoi cette vidéo a fait 4 millions de vues et la tienne 400", ""],
-    [2, "Ven", "V", "F8", "L'IA de la semaine #2", ""],
-    [2, "Sam", "T", "F7", "Fais analyser tes 20 dernières vidéos par une IA (le Prompt-Miroir)", ""],
-    [2, "Dim", "P", "F10", "2 semaines, 14 vidéos : mes vrais chiffres", ""]
+    [8, 2, "Lundi", 1, "🎥", "R", "F2", "J'ai fait analyser 200 vidéos virales françaises par une IA. Voilà ce qui revient.",
+      "21h · Sondage : sur quoi je fais la vidéo de jeudi ?",
+      "★ Ta prise d'autorité. Le rapport gratuit sort le même jour, avec « commente PACK » en fin de vidéo."],
+    [9, 2, "Mardi", 1, "🖥️", "T", "F7", "Comment je l'ai fait — le prompt et le script, en entier", "", ""],
+    [10, 2, "Mercredi", 1, "🖥️", "M", "F11", "Une pub complète, du brief à la livraison, en 20 minutes",
+      "21h · Boîte à questions sur l'IA", "+ 1 carrousel Instagram (20 min)"],
+    [11, 2, "Jeudi", 1, "🎥", "R", "F4", "Pourquoi cette pub a converti et pas l'autre — les deux sont à moi",
+      "", "★ Imbattable. Aucun compte de conseils réseaux en France ne peut faire cette vidéo : ils n'ont pas de clients à qui elle a rapporté de l'argent."],
+    [12, 2, "Vendredi", 1, "🖥️", "X", "F9", "Les 4 outils que j'utilise sur toutes mes pubs, et les 2 que j'ai arrêté de payer",
+      "12h30 · Les chiffres de la semaine", "+ 1 post LinkedIn (10 min)"],
+    [13, 2, "Samedi", 0, "🎥", "R", "F3", "Vole ces 10 accroches. Je les ai testées sur des pubs clients.", "", ""],
+    [14, 2, "Dimanche", 0, "🎥", "P", "F10", "2 semaines, 14 vidéos : mes vrais chiffres",
+      "12h30 · Avant/après d'une pub de la semaine", "15h écriture · 16h session face caméra"]
   ];
 
-  var WEEK_GOALS = [
-    ["Semaine 1 — installer le positionnement", "Tu collectes les 200 vidéos virales en parallèle, au fil de ton scroll. Lance la série <b>L'IA de la semaine</b> le vendredi."],
-    ["Semaine 2 — sortir l'étude", "<b>Le rapport gratuit sort le lundi</b> avec le déclencheur en commentaire. Cinq des sept vidéos sortent directement de l'étude."]
-  ];
-
-  var weeksEl = document.getElementById("weeks");
+  var body = document.getElementById("calendrier-body");
   [1, 2].forEach(function (w) {
-    var head = '<div class="wk-head"><h3>' + WEEK_GOALS[w - 1][0] + '</h3>' +
-               '<div class="goal">' + WEEK_GOALS[w - 1][1] + '</div></div>';
-    var rows = "";
-    V.forEach(function (v, i) {
-      if (v[0] !== w) return;
-      var id = "v" + i;
-      rows += '<div class="card vid' + (state[id] ? " done" : "") + (v[5] ? " star" : "") +
-        '" data-p="' + v[2] + '" data-id="' + id + '">' +
-        '<span class="box">' + CHECK + '</span>' +
-        '<span class="d">' + v[1] + '</span>' +
-        '<span><span class="txt">' + v[4] + '</span>' +
-        '<span class="tag">' + P[v[2]][0] + ' · ' + v[3] + '</span>' +
-        (v[5] ? '<span class="note">' + v[5] + '</span>' : '') +
-        '</span></div>';
+    var cards = "";
+    DAYS.forEach(function (d) {
+      if (d[1] !== w) return;
+      var id = "v" + d[0];
+      var star = d[9].indexOf("★") === 0;
+      cards += '<div class="card d' + (state[id] ? " done" : "") + (star ? " star" : "") +
+        '" data-p="' + d[5] + '" data-id="' + id + '" role="checkbox" tabindex="0" aria-checked="' +
+        (state[id] ? "true" : "false") + '">' +
+        '<div class="hd"><b>J' + d[0] + ' · ' + d[2] + '</b><span>' + d[4] + '</span></div>' +
+        (d[3] ? '<div class="pubs">🎬 2–3 pubs clients · 3 à 5 h</div>' : '') +
+        '<div class="video"><span class="box">' + CHECK + '</span>' +
+        '<span><span class="ttl">' + d[7] + '</span>' +
+        '<span class="tag">18h30 · ' + P[d[5]] + ' · ' + d[6] + '</span></span></div>' +
+        (d[8] ? '<div class="extra"><b>Story :</b> ' + d[8] + '</div>' : '') +
+        (d[9] ? '<div class="extra">' + d[9] + '</div>' : '') +
+        '</div>';
     });
-    weeksEl.insertAdjacentHTML("beforeend", '<div>' + head + '<div class="vids">' + rows + '</div></div>');
+    body.insertAdjacentHTML("beforeend",
+      '<div class="wk-label">Semaine ' + w + (w === 1 ? ' — installer qui tu es' : ' — sortir l’étude et prouver') + '</div>' +
+      '<div class="cal">' + cards + '</div>');
   });
 
-  [].forEach.call(document.querySelectorAll(".vid"), function (el) {
-    checkable(el, el.dataset.id, refresh);
+  function toggle(el) {
+    var id = el.dataset.id;
+    state[id] = !state[id];
+    el.classList.toggle("done", !!state[id]);
+    el.setAttribute("aria-checked", state[id] ? "true" : "false");
+    save(); refresh();
+  }
+  body.addEventListener("click", function (e) {
+    var el = e.target.closest(".d"); if (el) toggle(el);
+  });
+  body.addEventListener("keydown", function (e) {
+    if (e.key !== " " && e.key !== "Enter") return;
+    var el = e.target.closest(".d"); if (el) { e.preventDefault(); toggle(el); }
   });
 
-  var active = null;
-  var filtersEl = document.getElementById("filters");
-  var counts = {}; V.forEach(function (v) { counts[v[2]] = (counts[v[2]] || 0) + 1; });
-  Object.keys(P).forEach(function (k) {
-    var b = document.createElement("button");
-    b.className = "chip"; b.dataset.p = k; b.type = "button";
-    b.innerHTML = '<span class="dot" style="background:' + P[k][1] + '"></span>' + P[k][0] + ' · ' + (counts[k] || 0);
-    b.addEventListener("click", function () {
-      active = (active === k) ? null : k;
-      [].forEach.call(filtersEl.children, function (c) { c.classList.toggle("on", c.dataset.p === active); });
-      [].forEach.call(document.querySelectorAll(".vid"), function (v) {
-        v.classList.toggle("dim", !!active && v.dataset.p !== active);
-      });
-    });
-    filtersEl.appendChild(b);
-  });
-
-  /* ---------- 06 · formats ---------- */
-  var FORMATS = [
-    ["F1", "Comparatif gradué", "Portée maximale", "0-2 s   « Le même truc, 3 versions. Une seule fait des vues. »\n2-12 s  VERSION A — la nulle. « Ça, c'est 100 vues. »\n12-24 s VERSION B — la correcte. « Ça, c'est 100 000. »\n24-38 s VERSION C — l'excellente. « Et ça, c'est le million. »\n38-45 s Le pourquoi, en une phrase. Boucle."],
-    ["F2", "Pattern révélé", "Autorité + partages", "0-3 s   « Ces 6 vidéos n'ont rien en commun. Sauf une chose. »\n3-25 s  6 extraits, 3-4 s chacun, hook surligné en orange\n25-35 s LA RÉVÉLATION, écrite en grand\n35-45 s « Utilise-la sur ta prochaine vidéo. »"],
-    ["F3", "Steal this", "Saves + captures d'écran", "0-2 s   « Vole ces 10 accroches. »\n2-35 s  Liste à l'écran, lisible, PAUSABLE\n35-40 s « Screenshot. Et commente PACK pour les 100 autres. »"],
-    ["F4", "Teardown de cas", "Autorité maximale", "0-3 s   LE CHIFFRE\n3-10 s  L'extrait en incrustation\n10-50 s 3 raisons numérotées, annotées sur l'extrait\n50-65 s « Voilà comment tu fais pareil »\n65-70 s CTA"],
-    ["F5", "Taxonomie nommée", "Mémorisation", "0-3 s   « Il n'y a que 3 types. Tu n'en fais qu'un. »\n3-45 s  Type 1 / 2 / 3 — nommés, un exemple visuel chacun\n45-55 s « Le bon ratio, c'est… »\n55-60 s CTA"],
-    ["F7", "Tuto IA", "Saves + crédibilité", "0-2 s   LE RÉSULTAT à l'écran, avant tout mot\n2-6 s   « J'ai fait ça en 30 secondes. »\n6-45 s  3 à 5 étapes, PROMPT VISIBLE EN ENTIER\n45-55 s Le résultat final en grand\n55-60 s « Commente PROMPT »"],
-    ["F8", "Veille chaude", "Pics de vues non-abonnés", "Publication sous 48 h MAXIMUM après la news.\nSi une grosse actu IA tombe, elle prend la place\nde la vidéo la moins prioritaire de la semaine."],
-    ["F10", "Perso structuré", "Attachement", "0-3 s   Le point le plus bas, ou le chiffre le plus fort\n3-12 s  La situation, 2 phrases max\n12-40 s La bascule : ce qui a changé\n40-55 s La leçon — formulée POUR LE SPECTATEUR\n55 s    Pas de CTA, ou « raconte-moi le tien »"]
-  ];
-  var fg = document.getElementById("formats-grid");
-  FORMATS.forEach(function (f) {
-    fg.insertAdjacentHTML("beforeend",
-      '<div class="card fmt"><div class="fh"><span class="code">' + f[0] + '</span><h4>' + f[1] + '</h4></div>' +
-      '<div class="role">' + f[2] + '</div><pre>' + f[3] + '</pre></div>');
-  });
-
-  /* ---------- 07 · hooks ---------- */
+  /* ---------- accroches ---------- */
   var HOOKS = [
-    ["F1", "Un hook à 100 vues vs 100 000 vues vs 1 million de vues"],
-    ["F1", "Même vidéo, 3 miniatures. Devine laquelle a fait 10 fois plus."],
-    ["F1", "Un prompt à 100 vues vs un prompt à 1M de vues"],
-    ["F1", "Une bio à 0 abonné vs une bio à 100 000 abonnés"],
-    ["F1", "3 façons de dire la même phrase. Une seule fait des vues."],
-    ["F2", "Ces 6 vidéos n'ont rien en commun. Sauf leurs 3 premières secondes."],
-    ["F2", "J'ai fait analyser 200 vidéos virales françaises par une IA."],
-    ["F2", "60 % des vidéos à 1M utilisent la même structure. La voilà."],
-    ["F2", "Le pattern caché des comptes qui grossissent le plus vite"],
-    ["F3", "Vole ces 10 accroches. Je les ai testées."],
-    ["F3", "Copie-colle ce prompt, tu me remercieras."],
-    ["F3", "Vole ma structure de tuto. Elle marche à tous les coups."],
-    ["F3", "10 idées de vidéos que tu peux tourner aujourd'hui."],
-    ["F4", "Cette vidéo lui a fait 300 000 abonnés en une nuit."],
-    ["F4", "Pourquoi cette vidéo a fait 4 millions de vues et la tienne 400."],
-    ["F4", "Il a fait 1M de vues avec son téléphone et zéro montage."],
-    ["F4", "Cette vidéo est mauvaise. Et elle a fait 2 millions. Voilà pourquoi."],
-    ["F5", "Il n'y a que 3 types de vidéos. Tu n'en fais qu'une."],
-    ["F5", "Portée, autorité, attachement : à quel étage tu bloques ?"],
-    ["F5", "La méthode BRIQUE : les 6 lettres qui décident si ta vidéo part."],
-    ["F5", "Si je repartais de 0 abonné demain : mes 30 premiers jours."],
-    ["F6", "Raconter une histoire ≠ storytelling. Ça coûte des millions de vues."],
-    ["F6", "Utiliser ChatGPT ≠ prompter."],
-    ["F6", "Automatiser ≠ déléguer."],
-    ["F7", "J'ai fait ça en 30 secondes. Voilà le prompt."],
-    ["F7", "Tu utilises ChatGPT comme un moteur de recherche. Regarde ça."],
-    ["F7", "Ce prompt me sort 30 accroches en 10 secondes."],
-    ["F7", "J'ai automatisé un truc que je faisais 2 h par semaine."],
-    ["F7", "Si tu fais encore ça à la main, il faut qu'on parle."],
-    ["F8", "Cet outil vient de sortir un truc qui change tout."],
-    ["F8", "C'est officiel, c'est maintenant gratuit."],
-    ["F8", "Les 3 outils IA que j'ai arrêté de payer ce mois-ci."],
-    ["F10", "Je filme pour des marques toute la journée. Voilà ce que ça m'a appris."],
-    ["F10", "Voilà combien j'ai gagné le mois dernier."],
-    ["F10", "2 semaines, 14 vidéos : le bilan honnête."],
-    ["F10", "La discipline, ce n'est pas de la motivation."],
-    ["F10", "Ce que 50 000 abonnés ont changé — et ce que ça n'a pas changé."],
-    ["F10", "Le jour où j'ai failli tout arrêter."]
+    "J'ai fait cette pub entièrement en IA. Zéro caméra, zéro acteur.",
+    "Les 12 générations ratées avant celle que le client a validée.",
+    "Une pub complète, du brief à la livraison, en 20 minutes.",
+    "Pourquoi cette pub a converti et pas l'autre. Les deux sont à moi.",
+    "Ce que les marques me demandent le plus souvent — et ce que je refuse.",
+    "Un hook à 100 vues vs 100 000 vues vs 1 million de vues",
+    "Même vidéo, 3 miniatures. Devine laquelle a fait 10 fois plus.",
+    "Un prompt à 100 vues vs un prompt à 1M de vues",
+    "3 façons de dire la même phrase. Une seule fait des vues.",
+    "Ces 6 vidéos n'ont rien en commun. Sauf leurs 3 premières secondes.",
+    "J'ai fait analyser 200 vidéos virales françaises par une IA.",
+    "60 % des vidéos à 1M utilisent la même structure. La voilà.",
+    "Vole ces 10 accroches. Je les ai testées sur des pubs clients.",
+    "Copie-colle ce prompt, tu me remercieras.",
+    "Vole ma structure de tuto. Elle marche à tous les coups.",
+    "Cette vidéo lui a fait 300 000 abonnés en une nuit.",
+    "Pourquoi cette vidéo a fait 4 millions de vues et la tienne 400.",
+    "Cette pub est moche. Et elle a converti trois fois mieux. Voilà pourquoi.",
+    "Il n'y a que 3 types de vidéos. Tu n'en fais qu'une.",
+    "Portée, autorité, attachement : à quel étage tu bloques ?",
+    "Si je repartais de 0 abonné demain : mes 30 premiers jours.",
+    "Raconter une histoire ≠ storytelling. Ça coûte des millions de vues.",
+    "Utiliser ChatGPT ≠ prompter.",
+    "Automatiser ≠ déléguer.",
+    "J'ai fait ça en 30 secondes. Voilà le prompt.",
+    "Tu utilises ChatGPT comme un moteur de recherche. Regarde ça.",
+    "Ce prompt me sort 30 accroches en 10 secondes.",
+    "Si tu fais encore ça à la main, il faut qu'on parle.",
+    "Cet outil vient de sortir un truc qui change tout.",
+    "Les 3 outils IA que j'ai arrêté de payer ce mois-ci.",
+    "J'ai dépensé 300 € pour te dire de ne pas l'acheter.",
+    "Les 4 outils que j'utilise sur toutes mes pubs.",
+    "Je gagne ma vie en faisant des pubs 100 % IA. Voilà comment j'en suis arrivé là.",
+    "Voilà combien j'ai gagné le mois dernier.",
+    "2 semaines, 14 vidéos : le bilan honnête.",
+    "La discipline, ce n'est pas de la motivation.",
+    "Le jour où j'ai failli tout arrêter."
   ];
   var hg = document.getElementById("hooks-grid");
   HOOKS.forEach(function (h) {
     var el = document.createElement("button");
-    el.className = "card hook"; el.type = "button";
-    el.innerHTML = '<span class="f">' + h[0] + '</span><span>' + h[1] + '</span>';
+    el.className = "card hook"; el.type = "button"; el.textContent = h;
     el.addEventListener("click", function () {
       var done = function () {
         el.classList.add("copied");
         setTimeout(function () { el.classList.remove("copied"); }, 1400);
       };
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(h[1]).then(done, done);
+        navigator.clipboard.writeText(h).then(done, done);
       } else { done(); }
     });
     hg.appendChild(el);
@@ -817,35 +413,12 @@
     });
   });
 
-  /* ---------- 09 · règles ---------- */
-  function renderRules(el, list) {
-    list.forEach(function (r, i) {
-      el.insertAdjacentHTML("beforeend",
-        '<div class="rule"><span class="n">' + (i + 1) + '</span><span><b>' + r[0] + '</b> <span>' + r[1] + '</span></span></div>');
-    });
-  }
-  renderRules(document.getElementById("rules"), [
-    ["Le hook s'écrit avant la vidéo.", "S'il ne tient pas en 10 mots, tu ne tournes pas."],
-    ["Une vidéo travaillée bat trois vidéos bâclées.", "L'algorithme juge la rétention à 3 secondes, pas le volume."],
-    ["Ne saute jamais les stories.", "Semaine chargée côté client : tu tombes à 4 vidéos, mais tu tiens les 5 stories."],
-    ["Montre, ne dis pas.", "Un teardown sans vrais extraits à l'écran, c'est un avis de plus. Avec les extraits, c'est une preuve."],
-    ["Ne gonfle jamais tes chiffres.", "200 vidéos analysées, c'est 200. Un chiffre invérifiable coûte plus cher qu'il ne rapporte."]
-  ]);
-
-  /* ---------- compteurs ---------- */
+  /* ---------- compteur ---------- */
   function refresh() {
-    var prep = 0; for (var i = 0; i < TASKS.length; i++) if (state["prep" + i]) prep++;
-    document.getElementById("g-prep").textContent = prep + "/" + TASKS.length;
-    document.getElementById("b-prep").style.width = (prep / TASKS.length * 100) + "%";
-
-    var done = 0, maxDay = 0;
-    for (var j = 0; j < V.length; j++) {
-      if (state["v" + j]) { done++; if (j + 1 > maxDay) maxDay = j + 1; }
-    }
-    document.getElementById("g-vid").textContent = done + "/" + V.length;
-    document.getElementById("b-vid").style.width = (done / V.length * 100) + "%";
-    document.getElementById("g-day").textContent = "J" + maxDay;
-    document.getElementById("b-day").style.width = (maxDay / V.length * 100) + "%";
+    var done = 0;
+    DAYS.forEach(function (d) { if (state["v" + d[0]]) done++; });
+    document.getElementById("g-vid").textContent = done + "/" + DAYS.length;
+    document.getElementById("b-vid").style.width = (done / DAYS.length * 100) + "%";
   }
   refresh();
 
@@ -856,17 +429,16 @@
     if (!cur) cur = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     root.setAttribute("data-theme", cur === "dark" ? "light" : "dark");
   });
-
   document.getElementById("btn-reset").addEventListener("click", function () {
     state = {}; save();
-    [].forEach.call(document.querySelectorAll(".task.done, .vid.done"), function (el) {
+    [].forEach.call(document.querySelectorAll(".d.done"), function (el) {
       el.classList.remove("done"); el.setAttribute("aria-checked", "false");
     });
     refresh();
   });
 
-  /* ---------- nav active ---------- */
-  var links = [].slice.call(document.querySelectorAll("nav.rail a"));
+  /* ---------- onglet actif ---------- */
+  var links = [].slice.call(document.querySelectorAll("nav.tabs a"));
   var secs = links.map(function (a) { return document.querySelector(a.getAttribute("href")); });
   var io = new IntersectionObserver(function (entries) {
     entries.forEach(function (en) {
@@ -874,7 +446,7 @@
       var k = secs.indexOf(en.target);
       links.forEach(function (a, i) { a.classList.toggle("on", i === k); });
     });
-  }, { rootMargin: "-15% 0px -70% 0px" });
+  }, { rootMargin: "-10% 0px -75% 0px" });
   secs.forEach(function (s) { if (s) io.observe(s); });
 })();
 </script>

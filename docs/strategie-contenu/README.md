@@ -23,28 +23,32 @@ revenus (Skool « Communauté IA », prestations vidéo, sponsors).
 ## 1. Le positionnement
 
 Tu ne fais pas « du conseil réseaux sociaux » — il y en a 500 comptes, et la plupart n'ont
-aucune preuve. Tu ne fais plus non plus « que des tutos IA ». Tu tiens les deux bouts :
+aucune preuve. Tu ne fais pas non plus « des tutos IA » — il y en a 500 aussi. Tu as quelque
+chose qu'aucun des deux n'a :
 
-> ### « J'analyse ce qui marche sur les réseaux — et je te donne l'IA qui le fait à ta place. »
+> ### « Je fais des pubs 100 % IA pour des marques. Je te montre exactement comment. »
 
-Elle a étudié 50 000 hooks **à la main**, en anglais, sur un an. **Toi tu peux le faire
-avec l'IA, en français, en une semaine — et tu peux le montrer.** C'est ton avantage
-structurel, et il est défendable : les comptes conseils FR n'ont pas ta compétence IA, les
-comptes IA FR n'ont ni ton audience ni ton angle contenu.
+**Tu ne parles pas d'IA, tu en vis.** Des marques te payent pour produire des pubs
+intégralement générées. C'est ton avantage structurel et il est indéfendable pour les autres :
+les comptes conseils FR n'ont pas ta compétence technique, les comptes IA FR n'ont pas de
+clients qui les payent, et personne n'a les deux plus ton audience.
 
-**Ce qui rend le virage crédible auprès de tes 50k actuels :** tu ne changes pas de métier,
-tu montes d'un cran. Tu passais ton temps à montrer *comment utiliser l'IA*. Tu montres
-maintenant *à quoi elle sert* — construire une audience et un business. Tes tutos restent,
-ils deviennent la preuve technique de ton discours.
+**Ce qui rend le conseil réseaux crédible dans ta bouche :** tes pubs doivent *convertir*
+pour être payées. Tu apprends ce qui retient l'attention parce que des marques te facturent
+sur ce résultat. Un coach réseaux te dira ce qui marche ; toi tu peux montrer une pub, ses
+chiffres, et le client qui a renouvelé.
+
+**Et l'étude par-dessus :** ta référence a analysé 50 000 hooks *à la main*, en anglais, sur
+un an. Toi tu le fais avec l'IA, en français, en un week-end — et tu montres le script.
 
 **Bio Instagram :**
 ```
-Brick · Réseaux sociaux & IA
-J'ai fait analyser 1 000 vidéos virales FR par une IA
-🧱 Le rapport + mes prompts, gratuits ↓
+Brick · Pubs 100 % IA pour les marques
+Je te montre exactement comment je les fais
+🧱 Mes prompts + le rapport, gratuits ↓
 ```
 
-**La phrase à répéter partout :** « Je te montre ce qui marche, et l'IA qui le fait. »
+**La phrase à répéter partout :** « Je fais des pubs 100 % IA. Je te montre tout. »
 
 ---
 
