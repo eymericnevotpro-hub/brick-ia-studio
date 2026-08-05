@@ -2,7 +2,7 @@ import Link from "next/link";
 
 const TABS = [
   { id: "tasks", label: "Tâches", href: "/tasks" },
-  { id: "dashboard", label: "Discipline", href: "/" },
+  { id: "dashboard", label: "Revenus", href: "/" },
   { id: "budget", label: "Budget", href: "/budget" },
   { id: "goals", label: "Objectifs", href: "/goals" },
 ] as const;
