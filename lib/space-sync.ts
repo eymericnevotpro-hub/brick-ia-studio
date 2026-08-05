@@ -10,6 +10,10 @@ const CODE_KEY = "bproductive.spaceCode";
 const PUSH_DEBOUNCE_MS = 1500;
 const POLL_MS = 8000; // check the cloud for the other device's changes
 
+// Every device auto-joins this single shared space — no code to type. Data is
+// online and identical on every device. (Personal couple app: fine to bake in.)
+export const AUTO_CODE = "bproductive-eymeric-suzy-shared-v1";
+
 export type SpaceStatus = "off" | "idle" | "pushing" | "pulling" | "error";
 
 // Turn a human passphrase into a long opaque key. A fixed salt widens the
@@ -38,20 +42,28 @@ export function useSpaceSync() {
   // (which would clobber a fresher value another device already pushed).
   const readyRef = useRef(false);
 
-  /* ── restore stored code on mount ─────────────────────────────────── */
+  /* ── auto-join the shared space on mount ──────────────────────────── */
   useEffect(() => {
     if (typeof window === "undefined" || !configured) return;
     installLocalStorageWatcher();
-    const stored = window.localStorage.getItem(CODE_KEY);
-    if (!stored) return;
+    // Keep an existing custom code if the user set one; otherwise auto-join the
+    // single shared space so data is the same on every device with no setup.
+    const active = window.localStorage.getItem(CODE_KEY) || AUTO_CODE;
+    if (!window.localStorage.getItem(CODE_KEY)) window.localStorage.setItem(CODE_KEY, active);
     let cancelled = false;
-    hashCode(stored).then(async (k) => {
+    hashCode(active).then(async (k) => {
       if (cancelled) return;
       keyRef.current = k;
-      setCode(stored);
+      setCode(active);
       setStatus("idle");
-      // Immediately sync from the cloud BEFORE the user can edit stale data.
-      try { await pull(); } finally { readyRef.current = true; }
+      // Sync from the cloud BEFORE the user can edit stale data. Seed the space
+      // from this device if it's still empty.
+      try {
+        const result = await pull();
+        if (result === "empty") await push(true);
+      } finally {
+        readyRef.current = true;
+      }
     });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
