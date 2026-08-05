@@ -261,7 +261,7 @@ function ScoresCard({ scores }: { scores: ReturnType<typeof perTaskScores> }) {
 function Editor({ tasks, setTasks }: { tasks: Task[]; setTasks: (v: Task[] | ((p: Task[]) => Task[])) => void }) {
   const update = (id: string, patch: Partial<Task>) => setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
   const remove = (id: string) => setTasks((prev) => prev.filter((t) => t.id !== id));
-  const add = () => setTasks((prev) => [...prev, { id: taskUid(), label: "Nouvelle tâche", emoji: "🎯", days: [] }]);
+  const add = () => setTasks((prev) => [...prev, { id: taskUid(), label: "Nouvelle tâche", emoji: "🎯", days: [], createdAt: taskTodayIso() }]);
   const toggleDay = (t: Task, day: number) => {
     const has = t.days.includes(day);
     update(t.id, { days: has ? t.days.filter((d) => d !== day) : [...t.days, day] });

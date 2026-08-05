@@ -6,6 +6,10 @@ export interface Task {
   label: string;
   emoji: string;
   days: number[]; // weekdays the task is active (0=Sun … 6=Sat). Empty = every day.
+  // Day the task started counting (YYYY-MM-DD). A task never affects days
+  // before this, so adding a task can't retroactively break past perfect days.
+  // Missing = counts for all history (legacy default tasks).
+  createdAt?: string;
 }
 
 export const WEEKDAYS_SHORT = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
@@ -31,9 +35,14 @@ export function isTaskActiveOn(task: Task, weekday: number): boolean {
   return task.days.length === 0 || task.days.includes(weekday);
 }
 
+// Whether a task already existed on (and applies to) a given date.
+export function taskAppliesOn(task: Task, date: Date): boolean {
+  if (task.createdAt && taskTodayIso(date) < task.createdAt) return false;
+  return isTaskActiveOn(task, date.getDay());
+}
+
 export function tasksForDate(tasks: Task[], date: Date): Task[] {
-  const wd = date.getDay();
-  return tasks.filter((t) => isTaskActiveOn(t, wd));
+  return tasks.filter((t) => taskAppliesOn(t, date));
 }
 
 export function dayLabelLong(d = new Date()): string {
@@ -107,7 +116,7 @@ export function perTaskScores(tasks: Task[], done: Completions, nDays: number, f
     for (let i = 0; i < nDays; i++) {
       const day = new Date(from);
       day.setDate(from.getDate() - i);
-      if (!isTaskActiveOn(task, day.getDay())) continue;
+      if (!taskAppliesOn(task, day)) continue;
       sched++;
       if ((done[taskTodayIso(day)] || []).includes(task.id)) d++;
     }
