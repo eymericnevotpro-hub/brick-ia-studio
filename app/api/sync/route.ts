@@ -7,11 +7,22 @@ export const dynamic = "force-dynamic";
 // suffix would start a fresh shared space.
 const KEY = "bproductive:shared:v1";
 
-// Read the Upstash/Vercel-KV REST credentials, whatever prefix Vercel injected.
+// Read the Upstash/Vercel-KV REST credentials, whatever prefix Vercel injected
+// (KV_, UPSTASH_REDIS_, STORAGE_, or any custom prefix chosen at connect time).
 function creds(): { url: string; token: string } | null {
-  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-  return url && token ? { url, token } : null;
+  const env = process.env;
+  const url = env.KV_REST_API_URL || env.UPSTASH_REDIS_REST_URL;
+  const token = env.KV_REST_API_TOKEN || env.UPSTASH_REDIS_REST_TOKEN;
+  if (url && token) return { url, token };
+  // Fallback: any *_REST_API_URL / *_REST_API_TOKEN pair (custom prefix).
+  let fUrl: string | undefined;
+  let fToken: string | undefined;
+  for (const [k, v] of Object.entries(env)) {
+    if (!v) continue;
+    if (k.endsWith("REST_API_URL")) fUrl = v;
+    else if (k.endsWith("REST_API_TOKEN") && !k.includes("READ_ONLY")) fToken = v;
+  }
+  return fUrl && fToken ? { url: fUrl, token: fToken } : null;
 }
 
 export async function GET() {
