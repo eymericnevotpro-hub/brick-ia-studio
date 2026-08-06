@@ -1,36 +1,21 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import { useCloudSync } from "@/lib/cloud-sync";
-import { useSpaceSync } from "@/lib/space-sync";
+import { useKvSync } from "@/lib/kv-sync";
 
-type Ctx = ReturnType<typeof useCloudSync>;
-type SpaceCtx = ReturnType<typeof useSpaceSync>;
+type Ctx = ReturnType<typeof useKvSync>;
 
-const CloudSyncContext = createContext<Ctx | null>(null);
-const SpaceSyncContext = createContext<SpaceCtx | null>(null);
+const SyncContext = createContext<Ctx | null>(null);
 
 export function CloudSyncProvider({ children }: { children: React.ReactNode }) {
-  // Drive both sync engines from a single place so sync works on every page.
-  // The code-based space sync is the simple path; the auth sync stays as an
-  // advanced fallback (dormant while no account session exists).
-  const cloud = useCloudSync();
-  const space = useSpaceSync();
-  return (
-    <CloudSyncContext.Provider value={cloud}>
-      <SpaceSyncContext.Provider value={space}>{children}</SpaceSyncContext.Provider>
-    </CloudSyncContext.Provider>
-  );
+  // Single cloud sync engine (Vercel KV) driven from one place, so every page
+  // shares the same up-to-date data automatically.
+  const value = useKvSync();
+  return <SyncContext.Provider value={value}>{children}</SyncContext.Provider>;
 }
 
-export function useCloudSyncCtx(): Ctx {
-  const v = useContext(CloudSyncContext);
-  if (!v) throw new Error("useCloudSyncCtx must be used inside CloudSyncProvider");
-  return v;
-}
-
-export function useSpaceSyncCtx(): SpaceCtx {
-  const v = useContext(SpaceSyncContext);
-  if (!v) throw new Error("useSpaceSyncCtx must be used inside CloudSyncProvider");
+export function useSyncCtx(): Ctx {
+  const v = useContext(SyncContext);
+  if (!v) throw new Error("useSyncCtx must be used inside CloudSyncProvider");
   return v;
 }

@@ -91,7 +91,7 @@ export async function readBackupFile(file: File): Promise<unknown> {
 
 // Patch localStorage so any setItem on a "disc.*" key emits a "disc:change"
 // event in the current window — with the key in `detail.key`. Two consumers
-// listen to it : the cloud-sync hook pushes debounced updates, and useLS
+// listen to it : the kv-sync hook pushes debounced updates, and useLS
 // re-reads its own value when somebody else writes to the same key (e.g.
 // the cloud pull replacing the snapshot).
 let patched = false;
