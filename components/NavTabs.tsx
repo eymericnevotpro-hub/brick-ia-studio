@@ -3,6 +3,7 @@ import Link from "next/link";
 const TABS = [
   { id: "tasks", label: "Tâches", href: "/tasks" },
   { id: "dashboard", label: "Revenus", href: "/" },
+  { id: "tournage", label: "Tournage", href: "/tournage" },
   { id: "budget", label: "Budget", href: "/budget" },
   { id: "goals", label: "Objectifs", href: "/goals" },
 ] as const;
@@ -13,8 +14,8 @@ export type NavTabId = (typeof TABS)[number]["id"];
 // still render the nav without trying to look "active".
 export default function NavTabs({ current }: { current?: NavTabId | string }) {
   return (
-    <nav style={{ display: "flex", justifyContent: "center", padding: "18px 28px 0" }}>
-      <div style={{ display: "inline-flex", gap: 4, background: "var(--bg-2)", padding: 4, borderRadius: 999, border: "1px solid var(--line)" }}>
+    <nav style={{ display: "flex", justifyContent: "center", padding: "18px 14px 0", overflowX: "auto" }}>
+      <div style={{ display: "inline-flex", gap: 4, background: "var(--bg-2)", padding: 4, borderRadius: 999, border: "1px solid var(--line)", flexShrink: 0 }}>
         {TABS.map((t) => {
           const active = current === t.id;
           return (
@@ -22,11 +23,12 @@ export default function NavTabs({ current }: { current?: NavTabId | string }) {
               key={t.id}
               href={t.href}
               style={{
-                padding: "8px 18px",
+                padding: "8px 15px",
                 borderRadius: 999,
                 fontSize: 13,
                 fontWeight: 600,
                 letterSpacing: "-0.005em",
+                whiteSpace: "nowrap",
                 background: active ? "white" : "transparent",
                 color: active ? "var(--ink)" : "var(--ink-2)",
                 boxShadow: active ? "var(--shadow-sm)" : "none",
