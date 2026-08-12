@@ -15,11 +15,18 @@ export interface Task {
 export const WEEKDAYS_SHORT = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
 export const WEEKDAYS_ORDER = [1, 2, 3, 4, 5, 6, 0]; // display Mon→Sun
 
+// Morning routine + evening rules — everything validated every day.
 export const DEFAULT_TASKS: Task[] = [
-  { id: "sport", label: "Sport", emoji: "🏃", days: [1, 3, 5] },
-  { id: "deep", label: "2h de deep work", emoji: "⚡", days: [1, 2, 3, 4, 5] },
-  { id: "lecture", label: "Lire 10 min", emoji: "📖", days: [] },
-  { id: "eau", label: "Boire 1,5 L d'eau", emoji: "💧", days: [] },
+  { id: "reveil", label: "Réveil à heure fixe (7j/7)", emoji: "⏰", days: [], createdAt: "2026-01-01" },
+  { id: "eau", label: "Grand verre d'eau au réveil", emoji: "💧", days: [], createdAt: "2026-01-01" },
+  { id: "lumiere", label: "20 min dehors à la lumière (marche rapide)", emoji: "☀️", days: [], createdAt: "2026-01-01" },
+  { id: "petitdej", label: "Petit-déj protéiné (sans sucre rapide)", emoji: "🍳", days: [], createdAt: "2026-01-01" },
+  { id: "calis", label: "Calisthénie 20-25 min", emoji: "💪", days: [], createdAt: "2026-01-01" },
+  { id: "douche", label: "Douche fraîche 30 s", emoji: "🚿", days: [], createdAt: "2026-01-01" },
+  { id: "plan", label: "Écrire les 3 tâches du jour", emoji: "✍️", days: [], createdAt: "2026-01-01" },
+  { id: "cafe14", label: "Zéro caféine après 14h", emoji: "☕", days: [], createdAt: "2026-01-01" },
+  { id: "ecrans", label: "Écrans coupés 45 min avant le lit", emoji: "📵", days: [], createdAt: "2026-01-01" },
+  { id: "coucher", label: "Heure de coucher fixe (7-8h)", emoji: "🌙", days: [], createdAt: "2026-01-01" },
 ];
 
 export function taskUid(): string {
@@ -124,4 +131,4 @@ export function perTaskScores(tasks: Task[], done: Completions, nDays: number, f
   });
 }
 
-export const EMOJI_CHOICES = ["🏃", "⚡", "📖", "💧", "🧘", "🥗", "💪", "🎯", "🧠", "🌙", "☀️", "✍️", "📵", "🚭", "💼", "🎨"];
+export const EMOJI_CHOICES = ["⏰", "💧", "☀️", "🍳", "💪", "🚿", "✍️", "☕", "📵", "🌙", "🏃", "⚡", "📖", "🧘", "🥗", "🎯", "🧠", "🚭", "💼", "🎨"];

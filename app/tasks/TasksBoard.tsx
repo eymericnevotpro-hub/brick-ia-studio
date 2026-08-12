@@ -29,7 +29,7 @@ export default function TasksBoard() {
 }
 
 function Inner() {
-  const [tasks, setTasks] = useLS<Task[]>("disc.tasks.v1", DEFAULT_TASKS);
+  const [tasks, setTasks] = useLS<Task[]>("disc.tasks.v2", DEFAULT_TASKS);
   const [done, setDone] = useLS<Completions>("disc.tasksDone.v1", {});
   const [editing, setEditing] = useState(false);
 
