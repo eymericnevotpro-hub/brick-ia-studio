@@ -70,3 +70,43 @@ Tu peux ensuite brancher un domaine perso dans *Project → Settings → Domains
 
 L'emploi du temps (tâches, heures, rappels) se modifie via le bouton
 **« Éditer »** de la section Emploi du temps.
+
+## 🎮 Congères — le jeu de l'onglet « Jeu » (`/game`)
+
+Le jeu de survie que les fausses pubs mobiles promettent sans jamais le livrer,
+en vrai et **sans aucune mécanique idle** : rien ne progresse quand tu ne joues
+pas, aucun gain hors-ligne, aucun compteur qui monte tout seul.
+
+Vue **isométrique 3D** (le style « diorama » des pubs), tout dessiné au canvas :
+zéro image à télécharger, donc ça marche hors-ligne dans la PWA.
+
+**La boucle :**
+
+1. **Jour (55 s)** — tu coupes du bois dans la forêt gelée (la hache frappe
+   toute seule quand tu es à portée), tu rebouches les brèches de la palissade
+   avec ce bois, tu fais cuire la viande crue sur le feu (elle **brûle** si tu
+   traînes) et tu nourris les rescapés qui arrivent au camp : ils paient en
+   pièces et certains restent se battre avec toi.
+2. **Nuit** — la horde sort de la forêt, tape la palissade et passe par les
+   trous. Tu tiens la ligne avec tes gardes, archers et charpentiers. Les
+   zombies tués lâchent la viande crue de la journée suivante.
+3. **Boutique** (le jour) — hache, raquettes, palissade renforcée, meilleur
+   foyer, vigueur, recrues, soins, livraison de bois.
+
+Chaque nuit est plus dure (plus nombreux, plus rapides, brutes à partir de la
+nuit 3), et si la nuit s'éternise **la horde s'enrage** et défonce la palissade
+— impossible de camper derrière ses murs.
+
+**Contrôles :** glisse n'importe où sur l'écran pour marcher (joystick
+flottant), bouton **Esquive** en bas à droite. Au clavier : ZQSD/WASD/flèches +
+espace. Les actions sont contextuelles : près d'un arbre tu coupes, près d'un
+trou avec du bois tu répares, près du feu tu poses/récupères la viande, près
+d'un rescapé affamé tu le nourris.
+
+Le meilleur score (nuit atteinte, zombies tués, pièces) est gardé dans le
+`localStorage`, comme le reste de l'app.
+
+Code : `lib/forest-game.ts` (simulation pure, sans DOM),
+`lib/forest-render.ts` (rendu isométrique canvas), `lib/forest-audio.ts`
+(bruitages WebAudio générés à la volée), `app/game/ForestGame.tsx` (boucle
+rAF, joystick, HUD).

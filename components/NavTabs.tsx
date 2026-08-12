@@ -6,6 +6,7 @@ const TABS = [
   { id: "tournage", label: "Tournage", href: "/tournage" },
   { id: "budget", label: "Budget", href: "/budget" },
   { id: "goals", label: "Objectifs", href: "/goals" },
+  { id: "game", label: "Jeu", href: "/game" },
 ] as const;
 
 export type NavTabId = (typeof TABS)[number]["id"];
