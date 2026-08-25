@@ -1,47 +1,40 @@
 import Link from "next/link";
 
 const TABS = [
-  { id: "tasks", label: "Tâches", href: "/tasks" },
-  { id: "sport", label: "Sport", href: "/sport" },
-  { id: "dashboard", label: "Revenus", href: "/" },
-  { id: "tournage", label: "Tournage", href: "/tournage" },
-  { id: "budget", label: "Budget", href: "/budget" },
-  { id: "goals", label: "Objectifs", href: "/goals" },
+  { id: "tasks", label: "Tâches", href: "/tasks", icon: "✅" },
+  { id: "sport", label: "Sport", href: "/sport", icon: "💪" },
+  { id: "dashboard", label: "Revenus", href: "/", icon: "💶" },
+  { id: "tournage", label: "Tournage", href: "/tournage", icon: "🎬" },
+  { id: "budget", label: "Budget", href: "/budget", icon: "🧾" },
+  { id: "goals", label: "Objectifs", href: "/goals", icon: "🎯" },
 ] as const;
 
 export type NavTabId = (typeof TABS)[number]["id"];
 
-// `current` is loose on purpose so pages that aren't a tab (like /install) can
-// still render the nav without trying to look "active".
+// Top pill row on desktop; fixed bottom bar with icons on phones.
+// `current` is loose so non-tab pages (like /install) can render without an
+// active tab.
 export default function NavTabs({ current }: { current?: NavTabId | string }) {
   return (
-    <nav style={{ display: "flex", justifyContent: "center", padding: "18px 14px 0", overflowX: "auto" }}>
-      <div style={{ display: "inline-flex", gap: 4, background: "var(--bg-2)", padding: 4, borderRadius: 999, border: "1px solid var(--line)", flexShrink: 0 }}>
-        {TABS.map((t) => {
-          const active = current === t.id;
-          return (
-            <Link
-              key={t.id}
-              href={t.href}
-              style={{
-                padding: "8px 15px",
-                borderRadius: 999,
-                fontSize: 13,
-                fontWeight: 600,
-                letterSpacing: "-0.005em",
-                whiteSpace: "nowrap",
-                background: active ? "white" : "transparent",
-                color: active ? "var(--ink)" : "var(--ink-2)",
-                boxShadow: active ? "var(--shadow-sm)" : "none",
-                textDecoration: "none",
-                transition: "all 220ms var(--ease-out)",
-              }}
-            >
+    <>
+      <nav className="nav-top">
+        <div className="nav-top-inner">
+          {TABS.map((t) => (
+            <Link key={t.id} href={t.href} className={`nav-pill${current === t.id ? " active" : ""}`}>
               {t.label}
             </Link>
-          );
-        })}
-      </div>
-    </nav>
+          ))}
+        </div>
+      </nav>
+
+      <nav className="nav-bottom">
+        {TABS.map((t) => (
+          <Link key={t.id} href={t.href} className={`nav-btm-item${current === t.id ? " active" : ""}`}>
+            <span className="nav-btm-ico">{t.icon}</span>
+            <span className="nav-btm-lbl">{t.label}</span>
+          </Link>
+        ))}
+      </nav>
+    </>
   );
 }
