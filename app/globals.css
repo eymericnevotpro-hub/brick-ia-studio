@@ -98,7 +98,8 @@ input { font-family: inherit; }
   .nav-top { display: none; }
   .nav-bottom {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
     background: rgba(255, 244, 232, 0.94);
     backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
@@ -106,9 +107,28 @@ input { font-family: inherit; }
     padding: 6px 2px calc(6px + env(safe-area-inset-bottom));
   }
   .nav-btm-item { display: flex; flex-direction: column; align-items: center; gap: 2px; text-decoration: none; padding: 4px 0; min-width: 0; }
-  .nav-btm-ico { font-size: 19px; line-height: 1; filter: grayscale(0.5); opacity: 0.7; transition: transform 180ms var(--bounce), filter 180ms, opacity 180ms; }
-  .nav-btm-lbl { font-size: 9px; font-weight: 700; color: var(--ink-3); letter-spacing: -0.01em; }
+  .nav-btm-ico { font-size: 18px; line-height: 1; filter: grayscale(0.5); opacity: 0.7; transition: transform 180ms var(--bounce), filter 180ms, opacity 180ms; }
+  .nav-btm-lbl { font-size: 8.5px; font-weight: 700; color: var(--ink-3); letter-spacing: -0.01em; }
   .nav-btm-item.active .nav-btm-ico { filter: none; opacity: 1; transform: scale(1.12); }
   .nav-btm-item.active .nav-btm-lbl { color: var(--orange); }
   body { padding-bottom: calc(58px + env(safe-area-inset-bottom)); }
+}
+
+/* ── invoice sheet inputs ─────────────────────────────────────────── */
+.sheet-in::placeholder { color: #C9BBA9; }
+.sheet-in:focus { background: #FFF7EE !important; border-radius: 4px; }
+
+/* ── print (invoices) ─────────────────────────────────────────────── */
+@media print {
+  .no-print, .nav-top, .nav-bottom, .bg-blob { display: none !important; }
+  body { padding: 0 !important; background: white !important; }
+  .print-sheet {
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
+  }
+  .sheet-in { background: transparent !important; }
+  @page { size: A4; margin: 14mm; }
 }

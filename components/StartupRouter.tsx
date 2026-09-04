@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 
 const KEY = "bproductive.lastPath";
 // Only remember the main menu tabs (not /install, /api, …).
-const TAB_PATHS = ["/", "/tasks", "/sport", "/tournage", "/budget", "/goals"];
+const TAB_PATHS = ["/", "/tasks", "/sport", "/tournage", "/budget", "/factures", "/goals"];
 
 export default function StartupRouter() {
   const pathname = usePathname();

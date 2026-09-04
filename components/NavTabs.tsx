@@ -5,7 +5,8 @@ const TABS = [
   { id: "sport", label: "Sport", href: "/sport", icon: "💪" },
   { id: "dashboard", label: "Revenus", href: "/", icon: "💶" },
   { id: "tournage", label: "Tournage", href: "/tournage", icon: "🎬" },
-  { id: "budget", label: "Budget", href: "/budget", icon: "🧾" },
+  { id: "budget", label: "Budget", href: "/budget", icon: "💳" },
+  { id: "factures", label: "Factures", href: "/factures", icon: "🧾" },
   { id: "goals", label: "Objectifs", href: "/goals", icon: "🎯" },
 ] as const;
 
