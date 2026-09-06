@@ -96,3 +96,19 @@ export const DAY_INITIAL = ["D", "L", "M", "M", "J", "V", "S"];
 /* ── top 3 du jour ───────────────────────────────────────────────── */
 
 export type Top3 = Record<string, string[]>; // dateISO -> 3 strings
+
+/* ── profils (Brick / Suzy) ──────────────────────────────────────── */
+
+export type Person = "brick" | "suzy";
+
+export const PERSONS: { id: Person; label: string; color: string; emoji: string }[] = [
+  { id: "brick", label: "Brick", color: "#FF6A1A", emoji: "🧱" },
+  { id: "suzy", label: "Suzy", color: "#FF4F9D", emoji: "🌸" },
+];
+
+// Namespace a storage key per person. Brick keeps the original keys so his
+// existing history is untouched; Suzy gets a ".suzy" suffix. The "disc."
+// prefix is preserved either way, so both still sync and back up.
+export function pKey(base: string, who: Person): string {
+  return who === "brick" ? base : `${base}.suzy`;
+}

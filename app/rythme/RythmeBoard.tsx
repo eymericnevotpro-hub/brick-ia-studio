@@ -5,10 +5,14 @@ import { Btn, Icon, useLS } from "@/components/discipline-ui";
 import {
   Completions,
   DEFAULT_TASKS,
+  EMOJI_CHOICES,
   Task,
+  WEEKDAYS_ORDER,
   currentStreak,
   dayLabelLong,
   lastDaysStats,
+  taskTodayIso,
+  taskUid,
   tasksForDate,
 } from "@/lib/tasks-store";
 import {
@@ -36,6 +40,8 @@ import {
   MOOD_LABELS,
   Moods,
   Night,
+  PERSONS,
+  Person,
   SLEEP_TARGET_MAX,
   SLEEP_TARGET_MIN,
   Sleep,
@@ -43,6 +49,7 @@ import {
   isoOf,
   joyUid,
   lastNDays,
+  pKey,
   sleepHours,
   sleepVerdict,
 } from "@/lib/rythme-store";
@@ -61,6 +68,9 @@ export default function RythmeBoard() {
 
 function Inner() {
   const [section, setSection] = useLS<Section>("disc.rythme.section", "jour");
+  // Device-local (no "disc." prefix) so each phone stays on its own profile.
+  const [who, setWho] = useLS<Person>("bproductive.who", "brick");
+  const person = PERSONS.find((p) => p.id === who) ?? PERSONS[0];
   const today = useMemo(() => new Date(), []);
   const iso = isoOf(today);
 
@@ -74,10 +84,25 @@ function Inner() {
   return (
     <div style={{ position: "relative", zIndex: 1, padding: "18px 20px 60px", maxWidth: 720, margin: "0 auto" }}>
       <header style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-        <div style={{ width: 40, height: 40, borderRadius: 12, background: "var(--ink)", color: "var(--orange)", display: "grid", placeItems: "center", boxShadow: "var(--shadow-md)", fontSize: 20 }}>🌱</div>
+        <div style={{ width: 40, height: 40, borderRadius: 12, background: "var(--ink)", color: person.color, display: "grid", placeItems: "center", boxShadow: "var(--shadow-md)", fontSize: 20 }}>🌱</div>
         <div>
           <div style={{ fontSize: 17, fontWeight: 600, letterSpacing: "-0.02em" }}>Rythme</div>
           <div style={{ fontSize: 12, color: "var(--ink-2)", textTransform: "capitalize" }}>{dayLabelLong(today)}</div>
+        </div>
+        <div style={{ flex: 1 }} />
+        <div style={{ display: "inline-flex", gap: 3, background: "var(--bg-2)", padding: 3, borderRadius: 999, border: "1px solid var(--line)" }}>
+          {PERSONS.map((p) => {
+            const on = who === p.id;
+            return (
+              <button
+                key={p.id}
+                onClick={() => setWho(p.id)}
+                style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 999, fontSize: 12.5, fontWeight: 700, background: on ? p.color : "transparent", color: on ? "white" : "var(--ink-3)", transition: "all 200ms var(--ease-out)" }}
+              >
+                <span style={{ fontSize: 13 }}>{p.emoji}</span>{p.label}
+              </button>
+            );
+          })}
         </div>
       </header>
 
@@ -93,21 +118,22 @@ function Inner() {
         ))}
       </div>
 
-      {section === "jour" && <Jour iso={iso} today={today} />}
-      {section === "sommeil" && <Sommeil iso={iso} today={today} />}
-      {section === "sport" && <Sport iso={iso} today={today} />}
-      {section === "plaisir" && <Plaisir iso={iso} today={today} />}
+      {section === "jour" && <Jour key={who} iso={iso} today={today} who={who} />}
+      {section === "sommeil" && <Sommeil key={who} iso={iso} today={today} who={who} />}
+      {section === "sport" && <Sport key={who} iso={iso} today={today} who={who} />}
+      {section === "plaisir" && <Plaisir key={who} iso={iso} today={today} who={who} />}
     </div>
   );
 }
 
 /* ══════════════════════════════ JOUR ══════════════════════════════ */
 
-function Jour({ iso, today }: { iso: string; today: Date }) {
-  const [tasks] = useLS<Task[]>("disc.tasks.v2", DEFAULT_TASKS);
-  const [done, setDone] = useLS<Completions>("disc.tasksDone.v1", {});
-  const [moods, setMoods] = useLS<Moods>("disc.mood.v1", {});
-  const [top3, setTop3] = useLS<Top3>("disc.top3.v1", {});
+function Jour({ iso, today, who }: { iso: string; today: Date; who: Person }) {
+  const [tasks, setTasks] = useLS<Task[]>(pKey("disc.tasks.v2", who), DEFAULT_TASKS);
+  const [done, setDone] = useLS<Completions>(pKey("disc.tasksDone.v1", who), {});
+  const [moods, setMoods] = useLS<Moods>(pKey("disc.mood.v1", who), {});
+  const [top3, setTop3] = useLS<Top3>(pKey("disc.top3.v1", who), {});
+  const [editing, setEditing] = useState(false);
 
   const todayTasks = useMemo(() => tasksForDate(tasks, today), [tasks, today]);
   const doneToday = done[iso] || [];
@@ -165,11 +191,15 @@ function Jour({ iso, today }: { iso: string; today: Date }) {
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {streak > 0 && <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--orange)" }}>🔥 {streak}j</span>}
             <span className="mono" style={{ fontSize: 13, fontWeight: 700 }}>{doneCount}/{todayTasks.length}</span>
+            <Btn kind="ghost" size="sm" onClick={() => setEditing((v) => !v)}>{editing ? "Terminé" : "Éditer"}</Btn>
           </div>
         </div>
         <div style={{ height: 6, background: "var(--bg-2)", borderRadius: 99, overflow: "hidden", marginBottom: 12 }}>
           <div style={{ height: "100%", width: `${pct * 100}%`, background: pct === 1 ? "var(--green)" : "var(--orange)", borderRadius: 99, transition: "width 400ms var(--ease-out)" }} />
         </div>
+        {editing ? (
+          <RoutineEditor tasks={tasks} setTasks={setTasks} />
+        ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
           {todayTasks.map((t) => {
             const on = doneToday.includes(t.id);
@@ -184,7 +214,8 @@ function Jour({ iso, today }: { iso: string; today: Date }) {
             );
           })}
         </div>
-        {pct === 1 && todayTasks.length > 0 && (
+        )}
+        {!editing && pct === 1 && todayTasks.length > 0 && (
           <div style={{ marginTop: 10, background: "#E6F5EC", borderRadius: 12, padding: "10px 12px", fontSize: 13, fontWeight: 600, color: "var(--green)", textAlign: "center" }}>
             🎉 Journée complète. C&apos;est exactement comme ça que ça remonte.
           </div>
@@ -263,8 +294,8 @@ function SupportCard() {
 
 /* ═════════════════════════════ SOMMEIL ═════════════════════════════ */
 
-function Sommeil({ iso, today }: { iso: string; today: Date }) {
-  const [sleep, setSleep] = useLS<Sleep>("disc.sleep.v1", {});
+function Sommeil({ iso, today, who }: { iso: string; today: Date; who: Person }) {
+  const [sleep, setSleep] = useLS<Sleep>(pKey("disc.sleep.v1", who), {});
   const nights = useMemo(() => lastNDays(7, today), [today]);
 
   const tonight: Night = sleep[iso] ?? { bed: "23:00", wake: "07:00" };
@@ -369,9 +400,9 @@ function TimeField({ label, value, onChange }: { label: string; value: string; o
 
 /* ══════════════════════════════ SPORT ══════════════════════════════ */
 
-function Sport({ iso, today }: { iso: string; today: Date }) {
-  const [reps, setReps] = useLS<SportReps>("disc.sportReps.v1", {});
-  const [done, setDone] = useLS<SportDone>("disc.sportDone.v1", {});
+function Sport({ iso, today, who }: { iso: string; today: Date; who: Person }) {
+  const [reps, setReps] = useLS<SportReps>(pKey("disc.sportReps.v1", who), {});
+  const [done, setDone] = useLS<SportDone>(pKey("disc.sportDone.v1", who), {});
 
   const wd = today.getDay();
   const kind = sportKindForWeekday(wd);
@@ -509,9 +540,9 @@ function Sport({ iso, today }: { iso: string; today: Date }) {
 
 /* ═════════════════════════════ PLAISIR ═════════════════════════════ */
 
-function Plaisir({ iso, today }: { iso: string; today: Date }) {
-  const [acts, setActs] = useLS<JoyActivity[]>("disc.joy.v1", DEFAULT_JOY);
-  const [done, setDone] = useLS<JoyDone>("disc.joyDone.v1", {});
+function Plaisir({ iso, today, who }: { iso: string; today: Date; who: Person }) {
+  const [acts, setActs] = useLS<JoyActivity[]>(pKey("disc.joy.v1", who), DEFAULT_JOY);
+  const [done, setDone] = useLS<JoyDone>(pKey("disc.joyDone.v1", who), {});
   const [editing, setEditing] = useState(false);
   const [pick, setPick] = useState<string | null>(null);
 
@@ -622,6 +653,45 @@ function Plaisir({ iso, today }: { iso: string; today: Date }) {
           L&apos;objectif n&apos;est pas de tout cocher — c&apos;est d&apos;avoir <b style={{ color: "var(--ink-2)" }}>au moins une case verte par jour</b>.
         </div>
       </Card>
+    </div>
+  );
+}
+
+function RoutineEditor({ tasks, setTasks }: { tasks: Task[]; setTasks: (fn: (prev: Task[]) => Task[]) => void }) {
+  const update = (id: string, patch: Partial<Task>) => setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+  const remove = (id: string) => setTasks((prev) => prev.filter((t) => t.id !== id));
+  const add = () =>
+    setTasks((prev) => [...prev, { id: taskUid(), label: "Nouvelle habitude", emoji: "🎯", days: [], createdAt: taskTodayIso() }]);
+  const toggleDay = (t: Task, d: number) =>
+    update(t.id, { days: t.days.includes(d) ? t.days.filter((x) => x !== d) : [...t.days, d] });
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+      {tasks.map((t) => (
+        <div key={t.id} style={{ background: "var(--bg-2)", borderRadius: 12, padding: 9, display: "flex", flexDirection: "column", gap: 7 }}>
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <select value={t.emoji} onChange={(e) => update(t.id, { emoji: e.target.value })} style={{ fontSize: 16, background: "white", border: "1px solid transparent", borderRadius: 8, padding: "5px 3px" }}>
+              {[t.emoji, ...EMOJI_CHOICES.filter((e) => e !== t.emoji)].map((e) => <option key={e} value={e}>{e}</option>)}
+            </select>
+            <input value={t.label} onChange={(e) => update(t.id, { label: e.target.value })} style={{ flex: 1, minWidth: 0, background: "white", border: "1px solid transparent", borderRadius: 8, padding: "8px 10px", fontSize: 13, outline: "none", color: "var(--ink)" }} />
+            <button onClick={() => remove(t.id)} style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(196,74,0,0.08)", color: "#C44A00", fontSize: 13, display: "grid", placeItems: "center", flexShrink: 0 }}>✕</button>
+          </div>
+          <div style={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
+            {WEEKDAYS_ORDER.map((d) => {
+              const on = t.days.length === 0 || t.days.includes(d);
+              return (
+                <button key={d} onClick={() => toggleDay(t, d)} style={{ padding: "4px 9px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: on ? "var(--orange)" : "white", color: on ? "white" : "var(--ink-3)" }}>
+                  {WEEKDAYS_SHORT[d]}
+                </button>
+              );
+            })}
+            {t.days.length === 0 && <span style={{ fontSize: 10.5, color: "var(--ink-3)", alignSelf: "center", marginLeft: 4 }}>tous les jours</span>}
+          </div>
+        </div>
+      ))}
+      <button onClick={add} style={{ alignSelf: "flex-start", padding: "8px 14px", borderRadius: 999, background: "var(--orange-50)", color: "var(--orange)", fontSize: 12.5, fontWeight: 600, border: "1px dashed var(--orange-100)" }}>
+        + Ajouter une habitude
+      </button>
     </div>
   );
 }
